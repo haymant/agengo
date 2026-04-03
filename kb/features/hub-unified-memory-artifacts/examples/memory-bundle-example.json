@@ -1,0 +1,43 @@
+{
+  "id": "b6a1e8f0-3d5b-4c2a-9d7f-1e5c2a7f9b0a",
+  "sessionHandle": "chat-session-123",
+  "createdBy": "user:alice",
+  "createdAt": "2026-04-03T12:00:00Z",
+  "entries": [
+    {
+      "id": "e1",
+      "type": "message",
+      "payload": { "text": "Remember to follow up on the invoice." },
+      "meta": { "source": "chat", "confidence": 0.98 }
+    }
+  ],
+  "audit": [
+    { "event": "created", "by": "user:alice", "at": "2026-04-03T12:00:00Z" }
+  ]
+}
+{
+  "bundleId": "mb_example_001",
+  "version": 1,
+  "checksum": "sha256:abcd...",
+  "entries": [
+    {
+      "entryId": "e1",
+      "key": "summary",
+      "kind": "text",
+      "value": "Summary of recent findings",
+      "checksum": "sha256:1234...",
+      "producer": "agent-reviewer",
+      "createdAt": "2026-04-03T10:00:00Z",
+      "ttlSeconds": null,
+      "acl": { "scope": "chat" }
+    }
+  ],
+  "meta": {
+    "projectId": "proj_001",
+    "chatId": "chat_001",
+    "provenance": {
+      "gitUrl": "https://example.com/repo.git",
+      "gitRevision": "deadbeef"
+    }
+  }
+}

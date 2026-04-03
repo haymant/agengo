@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ArtifactMeta",
+  "type": "object",
+  "required": ["id", "checksum", "size", "contentType"],
+  "properties": {
+    "id": { "type": "string" },
+    "checksum": { "type": "string" },
+    "size": { "type": "integer" },
+    "contentType": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "uploader": { "type": "string" },
+    "retention": { "type": "integer", "description": "TTL in days" }
+  }
+}
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ArtifactMeta",
+  "type": "object",
+  "required": ["artifactId","filename","mimeType","sizeBytes","checksum","producer","createdAt"],
+  "properties": {
+    "artifactId": { "type": "string" },
+    "filename": { "type": "string" },
+    "mimeType": { "type": "string" },
+    "sizeBytes": { "type": "integer", "minimum": 0 },
+    "checksum": { "type": "string" },
+    "producer": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "ttlSeconds": { "type": ["integer","null"], "minimum": 0 },
+    "acl": {
+      "type": "object",
+      "properties": {
+        "scope": { "type": "string", "enum": ["chat","handoff"] },
+        "roomId": { "type": "string" },
+        "allowedAgentIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "blobRef": { "type": "string" },
+    "fetchUrl": { "type": ["string","null"] }
+  },
+  "additionalProperties": false
+}

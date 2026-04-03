@@ -1,0 +1,22 @@
+{
+  "id": "artifact-123",
+  "checksum": "sha256:abcdef...",
+  "size": 12345,
+  "contentType": "application/json",
+  "createdAt": "2026-04-03T12:01:00Z",
+  "uploader": "user:alice",
+  "retention": 30
+}
+{
+  "artifactId": "art_example_001",
+  "filename": "report.pdf",
+  "mimeType": "application/pdf",
+  "sizeBytes": 102400,
+  "checksum": "sha256:beef...",
+  "producer": "agent-report-generator",
+  "createdAt": "2026-04-03T10:05:00Z",
+  "ttlSeconds": 86400,
+  "acl": { "scope": "chat" },
+  "blobRef": "blob://local/art_example_001",
+  "fetchUrl": null
+}

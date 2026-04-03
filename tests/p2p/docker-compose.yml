@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  society-relay:
+    image: node:18-bullseye-slim
+    container_name: traco-society-relay
+    working_dir: /usr/src/app
+    restart: unless-stopped
+    volumes:
+      - ./data/society:/usr/src/app/data
+    ports:
+      - "4001:4001"
+      - "4002:4002/udp"
+    environment:
+      - NODE_ENV=production
+    command: /bin/sh -c "npm install -g society-protocol@latest --no-audit --no-fund || true && npx society --name traco-relay --relay --room traco-test-room --listen /ip4/0.0.0.0/tcp/4001 --listen /ip4/0.0.0.0/udp/4002/quic"

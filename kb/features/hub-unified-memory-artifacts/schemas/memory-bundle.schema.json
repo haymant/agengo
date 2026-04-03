@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MemoryBundle",
+  "type": "object",
+  "required": ["id", "sessionHandle", "entries", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "sessionHandle": { "type": "string" },
+    "createdBy": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "payload"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "payload": { "type": ["object", "string", "array"] },
+          "meta": { "type": "object" }
+        }
+      }
+    },
+    "audit": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  }
+}
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MemoryBundle",
+  "type": "object",
+  "required": ["bundleId", "version", "checksum", "entries", "meta"],
+  "properties": {
+    "bundleId": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "checksum": { "type": "string" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["entryId", "key", "kind", "checksum", "producer", "createdAt"],
+        "properties": {
+          "entryId": { "type": "string" },
+          "key": { "type": "string" },
+          "kind": { "type": "string", "enum": ["text","json","url","provenance"] },
+          "value": {},
+          "checksum": { "type": "string" },
+          "producer": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "ttlSeconds": { "type": ["integer","null"], "minimum": 0 },
+          "acl": {
+            "type": "object",
+            "properties": {
+              "scope": { "type": "string", "enum": ["chat","handoff"] },
+              "roomId": { "type": "string" },
+              "allowedAgentIds": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "meta": {
+      "type": "object",
+      "required": ["projectId","chatId"],
+      "properties": {
+        "projectId": { "type": "string" },
+        "chatId": { "type": "string" },
+        "sourceRunId": { "type": "string" },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "gitUrl": { "type": "string" },
+            "gitRevision": { "type": "string" },
+            "sourceShareId": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

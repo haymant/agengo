@@ -1,0 +1,197 @@
+{
+  "main": {
+    "id": "67a2f8989425c889",
+    "type": "split",
+    "children": [
+      {
+        "id": "8db03e0087de18aa",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4de9b6510ea4ff52",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "05-learning-paths/USER-GUIDE.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "USER-GUIDE"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "0f3ace703ed4d6d9",
+    "type": "split",
+    "children": [
+      {
+        "id": "f6ac4f2d0fb8bb17",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5dfd66bdcd071234",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "c033034ad0b80594",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "how to contribute to traco",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "b1184a58bbb6feaa",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "097c9cd2c3f545b8",
+    "type": "split",
+    "children": [
+      {
+        "id": "1f13e77bf2fc3893",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "49c8c25099ba7d39",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "05-learning-paths/USER-GUIDE.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for USER-GUIDE"
+            }
+          },
+          {
+            "id": "1e10ff33f43e8f90",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "05-learning-paths/USER-GUIDE.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from USER-GUIDE"
+            }
+          },
+          {
+            "id": "617e8a495eb02e18",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "332a9d0880cad92b",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "1cc2f5aafa93c86a",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "05-learning-paths/USER-GUIDE.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of USER-GUIDE"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "c033034ad0b80594",
+  "lastOpenFiles": [
+    "features/example-feature/testing-plan.md",
+    "features/example-feature/requirements.md",
+    "features/example-feature/implementation-plan.md",
+    "features/example-feature/design.md",
+    "templates/implementation-plan-template.md",
+    "templates/design-template.md",
+    "TEAM-HANDBOOK.md"
+  ]
+}
