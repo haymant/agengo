@@ -86,3 +86,5 @@ docs/_build/
 
 .test*
 .draft*
+
+.playwright/

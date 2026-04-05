@@ -3,7 +3,7 @@ title: Feature - Hub Room-Scoped Agent Handoff
 feature_id: FEAT-005
 artifact: requirements
 status: draft
-version: 1.2
+version: 1.3
 owner_agent: ba
 parent_feature: kb/features/hub-room-scoped-handoff
 related_artifacts:
@@ -13,7 +13,7 @@ related_artifacts:
   - kb/features/hub-room-scoped-handoff/testing-report.md
 jira_keys: []
 phase_gate: requirements-draft
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 ---
 
 # Context
@@ -40,6 +40,7 @@ This feature defines the actual remote handoff contract and control plane after 
 - Remote handoff depends on the isolated-workspace and sharing or discovery features landing first.
 - Same-room eligibility is defined by stable internal room keys or IDs rather than mutable labels.
 - Shared projects and chats are snapshot-based, so handoff cannot assume live synchronized state.
+- PeerTrust is the authoritative machine-token issuer for remote handoff. Hub derives JWKS from `${PEERTRUST_BASE_URL}/.well-known/jwks.json` and should not require a separate `WORKSECRET_JWKS_URI` setting in the canonical path.
 
 # Requirements
 
@@ -54,6 +55,7 @@ This feature defines the actual remote handoff contract and control plane after 
 - Small memory entries may be sent inline, while large artifacts must support metadata-only transfer with lazy fetch.
 - Artifact and memory payloads must carry checksums for integrity and deduplication.
 - Remote sessions must use short-lived authorization with explicit TTL and scope.
+- Short-lived authorization tokens for remote handoff must be issued by PeerTrust at `${PEERTRUST_BASE_URL}/api/oidc/token` and must be verifiable by `kid` against the derived PeerTrust JWKS endpoint.
 - Tracohub must record immutable or append-only handoff audit state including source node, target node, room, payload references, decision mode, and reconciliation status.
 - Remote completion must support finalize, retry, and deduplication semantics keyed by handoff ID and checksum.
 - Remote-produced artifacts or other durable outputs must not be applied back into the local chat workspace automatically; they must remain staged until the user explicitly confirms apply-back.
@@ -89,3 +91,4 @@ This feature defines the actual remote handoff contract and control plane after 
 - 2026-04-03: Bootstrapped from Claude-style handoff study, Tracohub p2p planning, and current hub architecture.
 - 2026-04-03: Refined BA requirements to align room identity and provenance scope with prior p2p decisions while keeping policy gaps open.
 - 2026-04-03: Added export-policy categories, explicit user confirmation before apply-back, and a requirement that long-running transfer and retry work not depend on a single request lifecycle.
+- 2026-04-04: Recorded PeerTrust as the authoritative issuer and the derived `${PEERTRUST_BASE_URL}/.well-known/jwks.json` verification contract for FEAT-005.

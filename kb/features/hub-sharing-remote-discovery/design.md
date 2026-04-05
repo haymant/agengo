@@ -152,6 +152,62 @@ There are internal non-canonical draft notes proposing Society Protocol (libp2p-
 
 Architects should decide whether Society Protocol is an experimental opt-in discovery backend for v1, or deferred to a later release after a central registry bootstrap.
 
+## Embedded Society Protocol — in-process options and rollout
+
+Embedding the Society protocol into the Hub process is a viable incremental enhancement for serverful deployments (VM, container, k8s). The following guidance describes safe integration patterns, constraints, and an incremental rollout plan that preserves the existing external sidecar and HTTP adapter compatibility.
+
+### Integration variants
+
+- **Child-process managed sidecar (low-risk first increment):** Hub spawns a supervised sidecar binary or node script. Provides strong process isolation while enabling single-deploy UX. Use this as the initial prototype and CI test target.
+- **Node Worker (moderate-risk):** Run libp2p inside a Node `Worker` thread to reduce IPC overhead while keeping stronger isolation than the main loop.
+- **Full in-process (high-risk):** Initialize libp2p directly on the main event loop. Only recommended for single-tenant or carefully monitored deployments.
+
+### Compatibility shim
+
+When embedded, Hub must continue to honor `TRACOHUB_SOCIETY_BASE_URL` semantics by exposing the same HTTP adapter endpoints internally (eg `/v1/shares/*`, `/v1/discovery/candidates`) so existing code paths and tests remain unchanged. This adapter is the compatibility surface that allows incremental adoption.
+
+### Configuration & flags
+
+- `TRACOHUB_SOCIETY_EMBEDDED=true|false` — opt-in flag to enable embedded behavior.
+- `TRACOHUB_SOCIETY_CHILD_PROCESS` — if present, spawn the configured binary/command instead of attempting in-process initialization.
+- Preserve current precedence: `TRACOHUB_SHARE_ROOT` and `TRACOHUB_REMOTE_CANDIDATES_FILE` keep priority over any society mode.
+
+### Identity & persistence
+
+- Persist node keys and DID material under `${TRACOHUB_DATA_HOME}/node-identity` with strict permissions.
+- Provide admin endpoints to export, inspect, and rotate identity material.
+
+### Health, metrics & observability
+
+- Add `society` subsection to the Hub health JSON (eg `/healthz?society=1`) showing peer count, relay status, and lastStartedAt.
+- Export Prometheus metrics: `tracohub_society_peer_count`, `tracohub_society_connections`, `tracohub_society_relay_events`.
+
+### Safety & operational guidance
+
+- Prefer child-process mode for production to avoid embedding untrusted native dependencies directly in the main process.
+- Document supported hosting targets; by default disallow embedded mode on serverless platforms and surface explicit errors when started there.
+- Add resource limits and watchdogs to auto-restart society worker on severe errors.
+
+### Rollout plan
+
+1. Prototype child-process spawn and compatibility adapter; run unit and mock-sidecar tests with the child-process manager.
+2. Add CI job that runs Hub in child-process embedded mode and executes the society-transport test suite.
+3. Pilot Node Worker mode in staging; gather telemetry and resource profile.
+4. If stability proven, optionally implement a full in-process mode and document constraints.
+
+### Acceptance criteria
+
+- Embedded mode must not regress existing external sidecar tests.
+- Health checks must report society readiness independent of Hub readiness.
+- Playwright E2E using embedded mode must be marked stable in CI or explicitly gated behind a long-running job runner.
+
+### Open decisions
+
+- Which hosting targets will be explicitly supported for embedded mode (Docker/k8s/VM only vs. also single-host systemd)?
+- Default for local dev: enable embedded mode by default or keep explicit opt-in?
+
+Architects and DevOps should review the above and update `implementation-plan.md` with the chosen integration variant and rollout slice definitions.
+
 # Open Risks
 
 - The current visibility selector may confuse users if sharing is added as a parallel concept without clear labeling.

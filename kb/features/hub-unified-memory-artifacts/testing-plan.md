@@ -1,11 +1,11 @@
 ---
 title: Testing Plan
-feature_id: hub-unified-memory-artifacts
+feature_id: FEAT-006
 artifact: testing_plan
 status: draft
 version: 0.1
 owner_agent: QA
-parent_feature: hub
+parent_feature: kb/features/hub-unified-memory-artifacts
 last_updated: 2026-04-03
 ---
 

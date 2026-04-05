@@ -1,11 +1,11 @@
 ---
 title: Unified Memory & Artifacts Design
-feature_id: hub-unified-memory-artifacts
+feature_id: FEAT-006
 artifact: design
 status: approved
 version: 1.2
 owner_agent: Architect
-parent_feature: hub
+parent_feature: kb/features/hub-unified-memory-artifacts
 last_updated: 2026-04-03
 ---
 

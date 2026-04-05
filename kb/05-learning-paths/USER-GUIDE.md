@@ -42,6 +42,24 @@ Traco has two layers of navigation:
 - `BA`: use when you need a business request turned into explicit requirements
 - `Developer`: use when the work is already approved and ready for implementation
 
+## Agent guidance for learning paths
+
+- Purpose: help BA and Guide agents classify usage knowledge and organise main features as learning paths so users can dive deeper per feature.
+- BA agent responsibilities:
+  - Use the `kb-bootstrapper` skill to create missing feature artifacts when only usage notes or code exist.
+  - Map observed usage or ticket descriptions to feature folders under `kb/features/` and add `feature_id` frontmatter.
+  - Create a short learning-path stub under `kb/05-learning-paths/learning-paths/` for each main feature with `overview.md` and `prerequisites.md`.
+  - Validate artifacts using the `knowledge-base` skill and `python3 scripts/validate_kb.py`.
+- Guide agent responsibilities:
+  - Use the `knowledge-base` skill to discover canonical artifacts and present them as an ordered learning path.
+  - Expand learning-path stubs into `steps.md` and `deep-dive.md` using code links and manual-verification docs.
+  - Ask BA to bootstrap or clarify missing requirements before teaching deep-dive topics.
+
+Notes:
+- Learning-path pages should be runnable and example-driven (include clipboard-ready commands: `pnpm`, `curl`, `pnpm playwright test`).
+- Organize learning paths by `feature_id` and link back to the feature KB folder and any `manual-verification` artifacts.
+
+
 ## Core Rules
 
 - The KB under `kb/` is the canonical source of feature state.

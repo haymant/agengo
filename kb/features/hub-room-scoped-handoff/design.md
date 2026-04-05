@@ -3,7 +3,7 @@ title: Feature - Hub Room-Scoped Agent Handoff
 feature_id: FEAT-005
 artifact: design
 status: draft
-version: 1.1
+version: 1.2
 owner_agent: architect
 parent_feature: kb/features/hub-room-scoped-handoff
 related_artifacts:
@@ -11,12 +11,12 @@ related_artifacts:
   - kb/features/hub-room-scoped-handoff/implementation-plan.md
   - kb/features/hub-room-scoped-handoff/testing-plan.md
 phase_gate: design-draft
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 ---
 
 # Design Summary
 
-The handoff layer should adapt the studied Claude-style patterns into Tracohub’s room-scoped model and expose them through one canonical HTTP or JSON surface that Next.js route handlers own and Python workers can consume. A remote handoff starts from a shared chat, resolves a same-room remote target, creates a short-lived authorized session, packages a bounded FEAT-006 memory bundle plus artifact metadata, allows lazy fetch for large artifacts, and records append-only audit state for reconciliation. Local handoff follows the same payload model but uses local references inside the same isolated workspace.
+The handoff layer should adapt the studied Claude-style patterns into Tracohub’s room-scoped model and expose them through one canonical HTTP or JSON surface that Next.js route handlers own and Python workers can consume. A remote handoff starts from a shared chat, resolves a same-room remote target, requests a short-lived PeerTrust-issued authorization token, packages a bounded FEAT-006 memory bundle plus artifact metadata, allows lazy fetch for large artifacts, and records append-only audit state for reconciliation. Local handoff follows the same payload model but uses local references inside the same isolated workspace.
 
 # Scope Mapping
 
@@ -31,18 +31,21 @@ Current state:
 
 - The repo has route-selection and artifact concepts, but no room-scoped handoff contract, no short-lived remote session primitive, and no durable audit model for exported memory or artifacts.
 - The current TypeScript app owns user auth, chat metadata, and route resolution, so it is the correct control-plane owner for v1 handoff authorization and persistence.
+- PeerTrust now signs machine tokens with its active RS256 key material, and hub verification derives the JWKS URL from `PEERTRUST_BASE_URL` instead of using a standalone `WORKSECRET_JWKS_URI` setting as the canonical contract.
 
 Target state:
 
 - Next.js route handlers expose a typed handoff control plane.
 - A Python worker or remote TypeScript peer consumes that same contract over HTTP or JSON and never writes directly into Tracohub databases or isolated roots.
 - FEAT-006 remains the only source of serializable state that may leave the local node.
+- PeerTrust is the only authoritative issuer for handoff bearer tokens, and serving peers verify those tokens with `jose` against `${PEERTRUST_BASE_URL}/.well-known/jwks.json`.
 
 # Architecture
 
 ## Components
 
 - Handoff contract types: `WorkSecret`, `SessionHandle`, `MemoryBundle`, `ArtifactMeta`, `HandoffRecord`, and `HandoffEvent`.
+- PeerTrust auth bridge: server-side helper that requests scoped tokens from `${PEERTRUST_BASE_URL}/api/oidc/token`, derives the JWKS URI from the same base URL, and validates incoming bearer tokens offline by `kid`.
 - Handoff orchestrator service: server-side logic that validates room membership, prepares payloads, persists audit state, and manages finalize or retry flow.
 - Remote session endpoints: `start-session`, `attach-memory`, `register-artifacts`, `fetch-memory`, `fetch-artifact`, `finalize`, and `abort`.
 - Memory and artifact scoping layer: logic that packages only the allowed FEAT-006 memory entries and artifact references for the active chat.
@@ -116,7 +119,7 @@ Recommended response:
     "expiresAt": "2026-04-03T12:00:00Z"
   },
   "workSecret": {
-    "token": "opaque-or-jwt",
+    "token": "peertrust-issued-jwt",
     "expiresAt": "2026-04-03T12:00:00Z",
     "scopes": ["memory.attach", "artifact.fetch", "handoff.finalize"]
   },
@@ -233,6 +236,14 @@ Recommended response:
 5. The remote target calls `finalize` with summary, produced state, and reconciliation checksums.
 6. The source hub revalidates ACL, checksum, and session state, then commits accepted outputs through the FEAT-006 commit API.
 7. The source hub appends terminal audit events and exposes final state back to the originating chat.
+
+## Auth Contract Notes
+
+- `PEERTRUST_BASE_URL` is the canonical configuration input for FEAT-005 auth.
+- The verification URL is derived as `${PEERTRUST_BASE_URL}/.well-known/jwks.json`.
+- The token issuance URL is `${PEERTRUST_BASE_URL}/api/oidc/token`.
+- Canonical verification checks are signature, `kid`, `iss`, `aud`, `exp`, and required scopes.
+
 
 ## Persistence And Audit Expectations
 

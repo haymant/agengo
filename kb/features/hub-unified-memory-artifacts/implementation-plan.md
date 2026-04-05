@@ -1,11 +1,11 @@
 ---
 title: Implementation Plan
-feature_id: hub-unified-memory-artifacts
+feature_id: FEAT-006
 artifact: implementation_plan
 status: draft
 version: 0.2
 owner_agent: Developer
-parent_feature: hub
+parent_feature: kb/features/hub-unified-memory-artifacts
 last_updated: 2026-04-03
 ---
 

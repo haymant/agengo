@@ -1,6 +1,6 @@
 ---
 title: Commit API
-feature_id: hub-unified-memory-artifacts
+feature_id: FEAT-006
 artifact: commit_api
 status: draft
 version: 0.1
