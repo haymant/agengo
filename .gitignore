@@ -88,3 +88,4 @@ docs/_build/
 .draft*
 
 .playwright/
+voice_sample.wav
