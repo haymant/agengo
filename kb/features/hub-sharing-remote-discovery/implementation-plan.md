@@ -26,10 +26,12 @@ Implement sharing and remote discovery in three slices: additive metadata and AP
 4. Implement snapshot pull behavior that creates local copies inside isolated workspaces.
 5. Extend route-options discovery to include same-room remote agent candidates through the additive `remoteCandidates` response field.
 6. Update `@` mention suggestions to surface and label remote candidates cleanly.
+7. Add node-scoped identity settings and propagate canonical `userId/nodeName/resourceName` labels into remote share summaries, route-options responses, and pull dialogs.
 
 # Current Implementation State
 
 - Route-option discovery and grouped `@` suggestions are already implemented and validated from the earlier FEAT-004 slice.
+- The current mention and pull UX still exposes remote resources primarily through `nodeId`-oriented metadata instead of the approved canonical `userId/nodeName/resourceName` labels.
 - Chat snapshot share and pull APIs are now implemented through additive file-backed metadata and snapshot persistence under the Tracohub data home.
 - Pulled chat snapshots now create local chat copies and write immutable provenance into FEAT-006 memory metadata during pull.
 - Project snapshot share and pull APIs are now implemented through additive file-backed project share records and pull provenance records.
@@ -38,6 +40,7 @@ Implement sharing and remote discovery in three slices: additive metadata and AP
 - Same-host runtime validation now has explicit support for multi-instance execution by allowing distinct Next dev dist directories (`TRACOHUB_NEXT_DIST_DIR`) and an optional shared filesystem share root (`TRACOHUB_SHARE_ROOT`) for cross-instance share or pull tests.
 - A first hybrid-transport foundation now exists: when `TRACOHUB_SHARE_ROOT` is unset and `TRACOHUB_SOCIETY_BASE_URL` is configured, remote candidate discovery and chat or project share publication, listing, and record fetch can flow through a Society sidecar adapter while the existing filesystem mode remains unchanged.
 - Route-option discovery and snapshot transport still need same-host Society SIT, remote candidate publication, and UI-level remote `@` execution wiring before Society-backed delivery can be considered complete.
+- Identity settings for the public remote `userId` and `nodeName`, canonical-path search in pull surfaces, and UI-level `@` rendering with canonical labels are the next FEAT-004 completion slice.
 
 # Dependencies
 
@@ -52,6 +55,7 @@ Implement sharing and remote discovery in three slices: additive metadata and AP
 - Test default non-exposure for newly created projects and chats.
 - Test snapshot share and pull flows for both projects and chats.
 - Test route-options output and `@` mention suggestions to confirm same-room filtering.
+- Test canonical-path labeling and search behavior in remote project, chat, and `@` suggestion surfaces.
 - Confirm that local-only users still see existing local provider routing behavior.
 
 # Rollback Notes
@@ -67,3 +71,4 @@ Implement sharing and remote discovery in three slices: additive metadata and AP
 - 2026-04-04: Added project share/pull APIs, local project-pull provenance, project-aware remote chat listing, and first-pass sidebar or chat share-pull controls.
 - 2026-04-05: Added same-host multi-instance runtime support for FEAT-004 verification through shared filesystem share state and distinct Next dev dist directories; Society-backed transport remains a follow-on.
 - 2026-04-05: Added a hybrid Society sidecar foundation for remote candidate discovery and chat or project share publication, listing, and fetch when `TRACOHUB_SHARE_ROOT` is unset.
+- 2026-04-08: Added the remaining FEAT-004 identity-label slice for node/user settings, canonical-path pull search, and `@` suggestion rendering.

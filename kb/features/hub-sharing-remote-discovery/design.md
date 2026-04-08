@@ -57,8 +57,11 @@ type ChatRouteOptionsResponse = {
 
 type RemoteAgentCandidate = {
   nodeId: string;
+  nodeName: string;
+  userId: string;
   agentId: string;
   title: string;
+  canonicalPath: string;
   roomId: string;
   capabilitySummary: string[];
   locality: "remote";
@@ -75,6 +78,19 @@ type RouteDiscoveryWarning = {
 
 This keeps the current `providers` contract intact and gives the UI a separate, explicitly labeled remote list to merge into `@` suggestions.
 
+Recommended public identity contract:
+
+```ts
+type RemoteIdentityLabel = {
+  userId: string;
+  nodeName: string;
+  resourceName: string;
+  canonicalPath: `${string}/${string}/${string}`;
+};
+```
+
+The canonical path is for discovery, search, and UX labels only. Authorization and transport must continue to use internal `roomId`, `nodeId`, `shareId`, and `agentId` tuples.
+
 ## Share And Pull Surface
 
 Recommended route-handler surface:
@@ -89,6 +105,7 @@ Recommended route-handler surface:
 Recommended request or response conventions:
 
 - Share responses should return immutable `shareId`, `roomId`, `publishedAt`, `expiresAt`, and a minimal `provenance` block.
+- Share responses should also return canonical public identity labels so the pull UI can list and search resources by `userId/nodeName/resourceName`.
 - Pull responses should return the new local `projectId` or `chatId`, the source `shareId`, and FEAT-006 provenance references written into the local copy.
 - Project share metadata must not imply chat execution eligibility. Chat share metadata must be explicit and separate.
 
@@ -96,8 +113,8 @@ Recommended request or response conventions:
 
 1. A user explicitly shares a local project or chat.
 2. Tracohub records exposure metadata and publishes discoverable room information for that scope.
-3. Another node lists shared projects or chats and pulls one into a local isolated copy.
-4. When the pulled or shared chat is active, the route-options API merges same-room remote agent candidates into the `@` mention suggestion set.
+3. Another node lists shared projects or chats and searches those lists using canonical `userId/nodeName/resourceName` labels before pulling one into a local isolated copy.
+4. When the pulled or shared chat is active, the route-options API merges same-room remote agent candidates into the `@` mention suggestion set and labels them with canonical `userId/nodeName/resourceName` paths.
 5. FEAT-005 later reuses the same `roomId`, `nodeId`, and `agentId` identity tuple for actual remote handoff authorization.
 
 ## Persistence Expectations
@@ -105,6 +122,7 @@ Recommended request or response conventions:
 - Project and chat exposure state should live in additive share tables rather than by overloading the existing chat `visibility` enum in [hub/lib/db/schema.ts](/home/data/git/haymant/traco/hub/lib/db/schema.ts).
 - Pulled local copies should record immutable provenance using FEAT-006 memory metadata for source share ID, source node ID, git URL, and git revision when present.
 - Remote-agent discovery cache entries should be soft-state records with `lastSeenAt`, `expiresAt`, and room-scoped uniqueness on `roomId + nodeId + agentId`.
+- Remote share records and candidate records should also persist the current public `userId` and `nodeName` labels so the UI can render stable, searchable canonical paths without exposing raw internal ids.
 - Discovery cache expiry must hide stale candidates from the UI rather than showing them as live peers.
 
 ## Failure Modes
@@ -129,7 +147,8 @@ Recommended request or response conventions:
 - Use project rooms for discovery and chat rooms for actual execution and `@` candidate filtering.
 - Extend current route discovery rather than inventing a separate remote mention UI.
 - Reuse FEAT-006 provenance and artifact semantics so git URL and revision stay immutable metadata while concrete pulled content remains artifact-backed local state.
- - Keep the route-options response backward-compatible by adding `remoteCandidates` rather than mutating the existing `providers` contract.
+- Keep the route-options response backward-compatible by adding `remoteCandidates` rather than mutating the existing `providers` contract.
+- Treat `userId/nodeName/resourceName` as the canonical human-readable remote address, while internal `nodeId`, `roomId`, `shareId`, and `agentId` remain the stable protocol identifiers.
 
 ### Architect-selected defaults (recommended for v1)
 
@@ -218,6 +237,7 @@ Architects and DevOps should review the above and update `implementation-plan.md
 
 - 2026-04-03: Bootstrapped sharing and remote-discovery design from hub UI and route-option behavior.
 - 2026-04-03: Approved design after defining additive `remoteCandidates` contract, share or pull surfaces, and FEAT-006 provenance alignment.
+- 2026-04-08: Added canonical `userId/nodeName/resourceName` labeling requirements for remote candidates and pull/search surfaces while keeping internal ids authoritative for authorization.
 
 ## Architect Acceptance Checklist
 

@@ -89,3 +89,5 @@ docs/_build/
 
 .playwright/
 voice_sample.wav
+
+deck-*

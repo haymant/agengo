@@ -76,6 +76,7 @@ const server = http.createServer(async (req, res) => {
     const roomId = reqUrl.searchParams.get("roomId");
     const srcId = reqUrl.searchParams.get("sourceProjectId");
     const shares = [...chatShares.values()].filter(s => (roomId ? s.roomId === roomId : true)).filter(s => (srcId ? s.projectId === srcId : true)).map(share => ({
+      canonicalPath: share.canonicalPath,
       expiresAt: share.expiresAt,
       messageCount: share.snapshot?.messages?.length ?? 0,
       projectId: share.projectId,
@@ -86,6 +87,8 @@ const server = http.createServer(async (req, res) => {
       shareId: share.shareId,
       sourceChatId: share.sourceChatId,
       sourceNodeId: share.sourceNodeId,
+      sourceNodeName: share.sourceNodeName,
+      sourceRemoteUserId: share.sourceRemoteUserId,
       title: share.title,
       version: share.version,
     }));
@@ -112,6 +115,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && reqUrl.pathname === "/v1/shares/project") {
     const shares = [...projectShares.values()].map(share => ({
+      canonicalPath: share.canonicalPath,
       chatCount: share.snapshot?.chatCount ?? 0,
       expiresAt: share.expiresAt,
       latestChatCreatedAt: share.snapshot?.latestChatCreatedAt ?? null,
@@ -122,7 +126,9 @@ const server = http.createServer(async (req, res) => {
       scope: share.scope,
       shareId: share.shareId,
       sourceNodeId: share.sourceNodeId,
+      sourceNodeName: share.sourceNodeName,
       sourceProjectId: share.sourceProjectId,
+      sourceRemoteUserId: share.sourceRemoteUserId,
       title: share.title,
       version: share.version,
     }));

@@ -27,6 +27,7 @@ Validate that share and pull behaviors are explicit, safe, and correctly scoped,
 | A new chat stays local by default and can be explicitly shared from the chat UI. | UI, integration | Default hidden state, explicit share action, visibility-model separation, unshared chat exclusion | Header or menu evidence plus remote discovery evidence showing only shared chats become discoverable |
 | A pulled project can expose a pull-chat workflow for remote chats. | Integration, end-to-end | Pulled-project chat list, remote chat pull, immutable snapshot behavior, pulled-chat labeling | Pulled chat metadata and local copy evidence with origin linkage |
 | Typing `@` in a shared chat lists only remote agents that are registered in the same room. | Unit, route integration, UI | Route-options merge filtering, stale registry suppression, local-only fallback, cross-room rejection | Route payload capture and mention-menu evidence showing only same-room candidates with stable room ID filtering |
+| Remote identity paths use `userId/nodeName/resourceName` across share, pull, and mention surfaces. | Unit, integration, UI | Canonical-path formatter coverage, route payload checks, pull-dialog label assertions, mention-menu label assertions | Assertions proving human-facing labels use canonical paths while requests still carry internal ids |
 | Remote discovery state is clearly labeled as local, shared, or pulled and does not expose unrelated scopes. | UI, integration | Candidate labels, project state labels, stale indicator, unrelated-scope suppression | Screens or DOM assertions plus route payload evidence proving label accuracy and non-exposure |
 
 # Targeted Refinements
@@ -37,6 +38,7 @@ Validate that share and pull behaviors are explicit, safe, and correctly scoped,
 4. Add provenance checks confirming pulled projects and chats record immutable git URL and revision when available and do not mutate that metadata on local edits.
 5. Add label-clarity checks that distinguish local, shared, pulled, and stale discovery states in both project and mention surfaces.
 6. Add a same-room filtering test that uses stable internal room IDs rather than display labels to prevent false-positive matches.
+7. Add settings-to-discovery tests proving that editing the public remote user ID or node name changes canonical labels in remote project, chat, and `@` surfaces without changing internal authorization ids.
 
 # Data and Environment
 
@@ -57,6 +59,7 @@ Validate that share and pull behaviors are explicit, safe, and correctly scoped,
 
 - 2026-04-03: Bootstrapped testing plan for sharing state and remote candidate discovery.
 - 2026-04-03: Added route-options contract, stale-registry, provenance, stable-room-ID, and label-clarity refinements needed to support FEAT-005 safely.
+- 2026-04-08: Added canonical identity-path and settings-propagation coverage for `userId/nodeName/resourceName` discovery UX.
 
 ## QA Acceptance Checklist (mention UX tests)
 
