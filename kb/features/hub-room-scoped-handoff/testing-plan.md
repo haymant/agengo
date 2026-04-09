@@ -3,7 +3,7 @@ title: Feature - Hub Room-Scoped Agent Handoff
 feature_id: FEAT-005
 artifact: testing-plan
 status: draft
-version: 1.1
+version: 1.4
 owner_agent: qa
 parent_feature: kb/features/hub-room-scoped-handoff
 related_artifacts:
@@ -11,7 +11,7 @@ related_artifacts:
   - kb/features/hub-room-scoped-handoff/design.md
   - kb/features/hub-room-scoped-handoff/implementation-plan.md
 phase_gate: testing-planned
-last_updated: 2026-04-03
+last_updated: 2026-04-09
 ---
 
 # Test Strategy
@@ -28,6 +28,7 @@ Validate that remote handoff uses explicit contracts, enforces same-room targeti
 | Large artifacts use metadata plus lazy fetch or signed retrieval instead of unconditional inline transfer. | Contract, integration, end-to-end | Inline threshold enforcement, metadata-only registration, authenticated lazy fetch, checksum verification, expired-fetch denial | Captured attach payloads, artifact metadata records, fetch request or response evidence, and proof that large blobs are not embedded in initial transfer |
 | Handoff audit and reconciliation state is persisted and supports retry without duplicate artifact uploads. | Integration, failure injection, end-to-end | Start-session persistence, finalize idempotency, retry after token expiry, retry after network interruption, duplicate callback suppression | Audit state timeline, durable artifact counts before and after replay, reconciliation status transitions, and logs or DB evidence keyed by handoff ID and checksum |
 | Safety and approval handling is defined for sensitive bundles. | Unit, integration, policy workflow | Classifier hook contract, auto-deny, auto-redact, manual approval required, approval expiry, denial audit path | Policy decision records, payload diffs before and after redaction, approval prompts or callbacks, and audit evidence showing blocked export when approval is absent |
+| The receiving node can review and accept pending handoffs from a discoverable app UI. | End-to-end, UI integration | Sidebar inbox discoverability, canonical target labeling, pending-session rendering, explicit accept action, accept-time chat pull, auto-send bootstrap, accepted-state refresh | Playwright evidence showing a dispatched handoff appearing in the target inbox UI, being accepted from the UI, redirecting into a pulled chat, auto-submitting the task prompt there, and reflecting accepted state back to the source node |
 
 # Contract Test Matrix
 
@@ -44,10 +45,12 @@ Validate that remote handoff uses explicit contracts, enforces same-room targeti
 ## Positive Path
 
 1. Start a same-room handoff from a shared chat and verify a short-lived authorized session is created with the expected room-bound scope.
-2. Attach a small `MemoryBundle` inline and verify the receiver can consume it without requiring secondary fetches.
-3. Register a large artifact as `ArtifactMeta` only, perform lazy fetch with the authorized session, and verify checksum validation before use.
-4. Finalize a successful handoff and verify audit state transitions from initiated to attached to finalized to reconciled.
-5. Return produced artifacts from the remote side and verify they are registered once and linked back to the originating handoff record.
+2. Verify the receiver node sees the dispatched session in its inbox over the configured shared-root or Society-backed transport and can accept it explicitly.
+3. Verify the receiver can open the app inbox UI, identify the handoff by canonical target label and task text, accept it without calling the API directly, and land in the pulled chat with the task prompt auto-submitted.
+4. Attach a small `MemoryBundle` inline and verify the receiver can consume it without requiring secondary fetches.
+5. Register a large artifact as `ArtifactMeta` only, perform lazy fetch with the authorized session, and verify checksum validation before use.
+6. Finalize a successful handoff and verify audit state transitions from initiated to attached to accepted to finalized to reconciled.
+7. Return produced artifacts from the remote side and verify they are registered once and linked back to the originating handoff record.
 
 ## Negative And Abuse Cases
 
@@ -81,6 +84,7 @@ Validate that remote handoff uses explicit contracts, enforces same-room targeti
 # Data and Environment
 
 - Requires at least two hub nodes or a controlled remote-handoff test double.
+- Shared-root or Society sidecar transport must be configurable so the receiver inbox can be exercised across nodes, not only through local store calls.
 - Requires isolated workspaces and sharing or discovery features to be present.
 - Should include fixture rooms for same-room, cross-room, stale-room, and unshared-chat conditions.
 - Should include memory fixtures with active-chat entries, sibling-chat entries, approved immutable git provenance, disallowed mutable project files, and sensitivity labels.
@@ -96,6 +100,7 @@ Validate that remote handoff uses explicit contracts, enforces same-room targeti
 - Evidence for lazy fetch must include proof that the initial handoff payload omitted the large blob body.
 - Evidence for retry and reconciliation must include before and after durable artifact counts or equivalent audit-state evidence keyed by handoff ID.
 - Evidence for approval or redaction must include the policy decision, resulting payload shape, and resulting audit state.
+- Evidence for the receiver inbox must show the user-facing queue entry, canonical remote identity, accept action, and accepted-state reflection rather than only API payloads.
 
 # Exit Criteria
 
@@ -109,3 +114,6 @@ Validate that remote handoff uses explicit contracts, enforces same-room targeti
 
 - 2026-04-03: Bootstrapped testing plan for room-scoped remote handoff.
 - 2026-04-03: Expanded coverage depth with contract, negative, retry, reconciliation, approval, redaction, and evidence-expectation planning for FEAT-005.
+- 2026-04-09: Added explicit receiver-inbox and accept coverage expectations for the implemented shared-transport handoff slice.
+- 2026-04-09: Added explicit app-level inbox discoverability and canonical remote-label coverage for the receiver acceptance UX.
+- 2026-04-09: Added accept-time pull and auto-send bootstrap coverage expectations for the receiver acceptance flow.

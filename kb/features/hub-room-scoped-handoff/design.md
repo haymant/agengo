@@ -3,7 +3,7 @@ title: Feature - Hub Room-Scoped Agent Handoff
 feature_id: FEAT-005
 artifact: design
 status: draft
-version: 1.2
+version: 1.5
 owner_agent: architect
 parent_feature: kb/features/hub-room-scoped-handoff
 related_artifacts:
@@ -11,12 +11,12 @@ related_artifacts:
   - kb/features/hub-room-scoped-handoff/implementation-plan.md
   - kb/features/hub-room-scoped-handoff/testing-plan.md
 phase_gate: design-draft
-last_updated: 2026-04-04
+last_updated: 2026-04-09
 ---
 
 # Design Summary
 
-The handoff layer should adapt the studied Claude-style patterns into Tracohub’s room-scoped model and expose them through one canonical HTTP or JSON surface that Next.js route handlers own and Python workers can consume. A remote handoff starts from a shared chat, resolves a same-room remote target, requests a short-lived PeerTrust-issued authorization token, packages a bounded FEAT-006 memory bundle plus artifact metadata, allows lazy fetch for large artifacts, and records append-only audit state for reconciliation. Local handoff follows the same payload model but uses local references inside the same isolated workspace.
+The handoff layer should adapt the studied Claude-style patterns into Tracohub’s room-scoped model and expose them through one canonical HTTP or JSON surface that Next.js route handlers own and Python workers can consume. A remote handoff starts from a shared chat, resolves a same-room remote target, requests a short-lived PeerTrust-issued authorization token, packages a bounded FEAT-006 memory bundle plus artifact metadata, allows lazy fetch for large artifacts, records append-only audit state for reconciliation, and presents the receiving node with a discoverable inbox UI for explicit acceptance. When the source chat is not yet shared, dispatch auto-publishes it first. When the receiver accepts the handoff, the app pulls that published chat into a local chat copy and auto-submits the handed-off task prompt into the pulled chat so execution starts from the accepted context. Local handoff follows the same payload model but uses local references inside the same isolated workspace.
 
 # Scope Mapping
 
@@ -47,7 +47,9 @@ Target state:
 - Handoff contract types: `WorkSecret`, `SessionHandle`, `MemoryBundle`, `ArtifactMeta`, `HandoffRecord`, and `HandoffEvent`.
 - PeerTrust auth bridge: server-side helper that requests scoped tokens from `${PEERTRUST_BASE_URL}/api/oidc/token`, derives the JWKS URI from the same base URL, and validates incoming bearer tokens offline by `kid`.
 - Handoff orchestrator service: server-side logic that validates room membership, prepares payloads, persists audit state, and manages finalize or retry flow.
+- Receiver inbox projection: transport-backed inbox records that mirror handoff session state to the target node over shared-root storage or Society sidecar transport.
 - Remote session endpoints: `start-session`, `attach-memory`, `register-artifacts`, `fetch-memory`, `fetch-artifact`, `finalize`, and `abort`.
+- Receiver acceptance surface: authenticated inbox listing and accept endpoints plus a sidebar-accessible inbox dialog that lets the receiving node review source context, acknowledge ownership, pull the published source chat, and bootstrap execution in the local pulled chat.
 - Memory and artifact scoping layer: logic that packages only the allowed FEAT-006 memory entries and artifact references for the active chat.
 - Safety gate: classifier or approval hook that can block, redact, or require manual approval for high-risk bundles.
 - Reconciliation applier: logic that maps remote outputs back through the FEAT-006 commit API instead of writing directly into chat state.
@@ -57,10 +59,12 @@ Target state:
 V1 should standardize on one route namespace owned by the hub app:
 
 - `POST /api/handoff/v1/sessions`
+- `GET /api/handoff/v1/sessions?view=inbox`
 - `POST /api/handoff/v1/sessions/{sessionId}/memory`
 - `POST /api/handoff/v1/sessions/{sessionId}/artifacts`
 - `GET /api/handoff/v1/sessions/{sessionId}/memory/{attachmentId}`
 - `GET /api/handoff/v1/sessions/{sessionId}/artifacts/{artifactId}`
+- `POST /api/handoff/v1/sessions/{sessionId}/accept`
 - `POST /api/handoff/v1/sessions/{sessionId}/finalize`
 - `POST /api/handoff/v1/sessions/{sessionId}/abort`
 
@@ -232,10 +236,15 @@ Recommended response:
 1. The source hub validates that the chosen target is in the same `roomId` as the active chat and that the chat is actually share-enabled.
 2. The source hub creates `SessionHandle`, `WorkSecret`, and an initial `HandoffRecord(status=authorized)`.
 3. The source hub serializes FEAT-006 memory into a bounded `MemoryBundle` and registers large artifacts as metadata only.
-4. The remote target fetches memory or artifacts lazily using the issued token.
-5. The remote target calls `finalize` with summary, produced state, and reconciliation checksums.
-6. The source hub revalidates ACL, checksum, and session state, then commits accepted outputs through the FEAT-006 commit API.
-7. The source hub appends terminal audit events and exposes final state back to the originating chat.
+4. The source hub publishes an inbox record for the target node over the shared-root or Society transport substrate.
+5. The remote target lists its inbox, reviews the pending handoff, and explicitly accepts the session.
+6. Accept persists the inbox decision, pulls the published source chat into a local receiving-node chat copy, and returns bootstrap metadata containing the pulled chat ID plus the handed-off task prompt.
+7. The receiving node's app surfaces those pending sessions in a discoverable inbox UI with canonical remote labels, source context, and an explicit accept action, then navigates to the pulled chat with the task prompt encoded in the URL bootstrap state.
+8. The pulled chat page consumes the bootstrap query exactly once, strips it from the URL, and auto-submits the handed-off task prompt so remote execution begins without a second manual send.
+9. The remote target fetches memory or artifacts lazily using the issued token.
+10. The remote target calls `finalize` with summary, produced state, and reconciliation checksums.
+11. The source hub revalidates ACL, checksum, and session state, then commits accepted outputs through the FEAT-006 commit API.
+12. The source hub appends terminal audit events and exposes final state back to the originating chat.
 
 ## Auth Contract Notes
 
@@ -308,3 +317,4 @@ Recommended response:
 
 - 2026-04-03: Bootstrapped room-scoped handoff design from studied handoff documents and current hub architecture.
 - 2026-04-03: Refined design with a concrete hybrid HTTP or JSON handoff contract, route surface, persistence model, and failure semantics.
+- 2026-04-09: Added the discoverable receiver inbox UI and canonical remote-label expectations to the FEAT-005 design surface.

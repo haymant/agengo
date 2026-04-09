@@ -8,6 +8,10 @@
 //  - POST /v1/shares/project
 //  - GET  /v1/shares/project
 //  - GET  /v1/shares/project/:id
+//  - POST /v1/handoffs
+//  - GET  /v1/handoffs
+//  - GET  /v1/handoffs/:id
+//  - POST /v1/handoffs/:id/accept
 
 import http from "node:http";
 import { URL } from "node:url";
@@ -23,6 +27,7 @@ for (let i = 0; i < args.length; i++) {
 const candidates = [];
 const chatShares = new Map();
 const projectShares = new Map();
+const handoffs = new Map();
 
 function sendJson(res, payload, status = 200) {
   res.statusCode = status;
@@ -139,6 +144,71 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && reqUrl.pathname.startsWith("/v1/shares/project/")) {
     const id = reqUrl.pathname.split("/").at(-1) || "";
     sendJson(res, { share: projectShares.get(id) ?? null });
+    return;
+  }
+
+  if (req.method === "POST" && reqUrl.pathname === "/v1/handoffs") {
+    try {
+      const payload = JSON.parse(body);
+      const handoff = payload.handoff;
+      handoffs.set(handoff.sessionId, handoff);
+      sendJson(res, { ok: true, handoff }, 201);
+    } catch (e) {
+      sendJson(res, { error: "invalid payload" }, 400);
+    }
+    return;
+  }
+
+  if (req.method === "GET" && reqUrl.pathname === "/v1/handoffs") {
+    const targetNodeId = reqUrl.searchParams.get("targetNodeId");
+    const roomId = reqUrl.searchParams.get("roomId");
+    const status = reqUrl.searchParams.get("status");
+    const filtered = [...handoffs.values()]
+      .filter((handoff) => (targetNodeId ? handoff.target?.nodeId === targetNodeId : true))
+      .filter((handoff) => (roomId ? handoff.roomId === roomId : true))
+      .filter((handoff) => (status ? handoff.status === status : true));
+    sendJson(res, { handoffs: filtered });
+    return;
+  }
+
+  if (req.method === "GET" && reqUrl.pathname.startsWith("/v1/handoffs/")) {
+    const parts = reqUrl.pathname.split("/");
+    const id = parts.at(-1) || "";
+
+    if (parts.at(-1) === "accept") {
+      sendJson(res, { error: "not found" }, 404);
+      return;
+    }
+
+    sendJson(res, { handoff: handoffs.get(id) ?? null });
+    return;
+  }
+
+  if (req.method === "POST" && reqUrl.pathname.startsWith("/v1/handoffs/") && reqUrl.pathname.endsWith("/accept")) {
+    try {
+      const parts = reqUrl.pathname.split("/");
+      const sessionId = parts.at(-2) || "";
+      const existing = handoffs.get(sessionId);
+
+      if (!existing) {
+        sendJson(res, { handoff: null }, 404);
+        return;
+      }
+
+      const payload = JSON.parse(body);
+      const updated = {
+        ...existing,
+        acceptedAt: existing.acceptedAt ?? new Date().toISOString(),
+        acceptedByNodeId: payload.acceptedByNodeId ?? existing.acceptedByNodeId ?? null,
+        acceptedByUserId: payload.acceptedByUserId ?? existing.acceptedByUserId ?? null,
+        status: "accepted",
+        updatedAt: new Date().toISOString(),
+      };
+      handoffs.set(sessionId, updated);
+      sendJson(res, { handoff: updated });
+    } catch (e) {
+      sendJson(res, { error: "invalid payload" }, 400);
+    }
     return;
   }
 

@@ -3,7 +3,7 @@ title: Feature - Hub Room-Scoped Agent Handoff
 feature_id: FEAT-005
 artifact: implementation-plan
 status: draft
-version: 1.7
+version: 1.11
 owner_agent: developer
 parent_feature: kb/features/hub-room-scoped-handoff
 related_artifacts:
@@ -11,7 +11,7 @@ related_artifacts:
   - kb/features/hub-room-scoped-handoff/design.md
   - kb/features/hub-room-scoped-handoff/testing-plan.md
 phase_gate: implementation-in-progress
-last_updated: 2026-04-05
+last_updated: 2026-04-09
 ---
 
 # Plan Summary
@@ -38,8 +38,13 @@ Implement remote handoff after isolation and discovery are in place: define cont
 - Approval policy is currently heuristic and inline (`allow`, `approve`, `redact`, `deny`) rather than backed by a user-facing review workflow.
 - FEAT-004 now has an initial Society sidecar transport foundation for remote candidate discovery and snapshot publication or fetch when `TRACOHUB_SHARE_ROOT` is unset, which is the intended transport substrate for later remote `@` execution and cross-node handoff delivery.
 - The chat route-selection model and composer state now carry `targetNodeId` for node-first remote `@` selection, and the chat POST route now uses that request contract to bootstrap a first FEAT-005 dispatch slice instead of rejecting remote execution outright.
-- The first remote composer UX slice is now implemented: selecting a remote node or agent leaves a visible `@nodeId/agentId` route marker in the composer, remote selection is no longer hidden entirely in local component state, and prompt submission strips the stored route marker before sending the user prompt body.
+- The remote composer UX slice now renders canonical remote identities in the composer controls when `remoteUserId` and `nodeName` are known, while prompt submission still strips the stored route marker before sending the user prompt body.
 - The first source-side remote dispatch slice is now implemented: `/api/chat` auto-shares the source chat when needed, creates a same-room FEAT-005 handoff session, attaches current chat-history memory to that session, and returns a queued handoff acknowledgement in the chat stream while execution remains pending receiving-node review and acceptance.
+- Auto-shared chats now preserve source-room lineage for pulled chats and chats created inside pulled projects, so FEAT-005 same-room validation uses the original shared room instead of the local pulled-project ID during source-side dispatch.
+- The receiver-side inbox slice is now implemented: handoff sessions publish a transport-backed inbox record over the shared-root or Society transport substrate, the target node can list pending inbox sessions through `GET /api/handoff/v1/sessions?view=inbox`, and acceptance is persisted through `POST /api/handoff/v1/sessions/{sessionId}/accept`.
+- Receiver acceptance now also pulls the published source chat into a local chat copy and returns bootstrap metadata so the app can navigate into the pulled chat and auto-submit the handed-off task prompt.
+- Source-side session reads now overlay receiver acceptance state from the shared inbox record, so the originating node sees the session transition to `accepted` before any later remote execution or finalize behavior proceeds.
+- Focused unit and two-node Playwright coverage now prove dispatch, inbox visibility, receiver acceptance, accept-time chat pull, auto-submission bootstrap, and source-side accepted-state reflection for the current FEAT-005 handoff slice.
 
 # Dependencies
 
@@ -72,3 +77,7 @@ Implement remote handoff after isolation and discovery are in place: define cont
 - 2026-04-05: Added node-aware remote composer routing scaffolding (`targetNodeId`, node-first `@` selection, and an explicit server guard) so the next slice can attach the composer to the FEAT-005 handoff session flow without changing the request contract again.
 - 2026-04-05: Implemented the first durable remote composer UX slice so remote node and agent selections render as visible `@nodeId/agentId` markers, remote node suggestions no longer render malformed labels, and focused unit coverage now locks the route-marker formatting and prompt-stripping behavior.
 - 2026-04-05: Replaced the `/api/chat` remote-execution rejection with a first dispatch path that auto-publishes the source chat, bootstraps a FEAT-005 handoff session, attaches current chat-history memory, and persists a pending remote handoff while receiving-node acceptance remains the next implementation slice.
+- 2026-04-08: Corrected source-side dispatch for pulled chats so auto-shared chat records preserve source-room lineage, preventing same-room FEAT-005 rejection when a pulled chat targets a valid remote agent from the original shared room.
+- 2026-04-09: Implemented the receiver inbox and acceptance slice with shared-transport inbox persistence, inbox listing and accept routes, source-side accepted-status reflection, and focused unit plus two-node Playwright evidence.
+- 2026-04-09: Added the discoverable sidebar inbox dialog and canonical remote-label rendering fix so receiver acceptance and composer routing both use human-readable remote identities.
+- 2026-04-09: Extended receiver acceptance so it pulls the published chat, redirects into the pulled chat, and auto-submits the handed-off task prompt through the existing chat bootstrap flow.

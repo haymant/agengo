@@ -3,7 +3,7 @@ title: Feature - Hub Room-Scoped Agent Handoff
 feature_id: FEAT-005
 artifact: requirements
 status: draft
-version: 1.3
+version: 1.5
 owner_agent: ba
 parent_feature: kb/features/hub-room-scoped-handoff
 related_artifacts:
@@ -13,7 +13,7 @@ related_artifacts:
   - kb/features/hub-room-scoped-handoff/testing-report.md
 jira_keys: []
 phase_gate: requirements-draft
-last_updated: 2026-04-04
+last_updated: 2026-04-09
 ---
 
 # Context
@@ -28,6 +28,7 @@ This feature defines the actual remote handoff contract and control plane after 
 - Restrict remote handoff so it can only target agents registered in the same shared room as the active chat.
 - Preserve local chat-root and project-root isolation even when memory or artifacts are exported remotely.
 - Record audit, TTL, ACL, and reconciliation state so remote handoff is safe and debuggable.
+- Expose a discoverable receiving-node inbox so users can review and explicitly accept pending handoffs in the app.
 
 # Non-goals
 
@@ -59,6 +60,10 @@ This feature defines the actual remote handoff contract and control plane after 
 - Tracohub must record immutable or append-only handoff audit state including source node, target node, room, payload references, decision mode, and reconciliation status.
 - Remote completion must support finalize, retry, and deduplication semantics keyed by handoff ID and checksum.
 - Remote-produced artifacts or other durable outputs must not be applied back into the local chat workspace automatically; they must remain staged until the user explicitly confirms apply-back.
+- The receiving node must expose a discoverable inbox UI that lists pending or accepted handoffs with source context, canonical target identity, task summary, and an explicit accept action.
+- Source-side remote handoff dispatch must auto-publish the active chat snapshot when no active share exists so the receiving node always has a published chat to pull.
+- Accepting a pending remote handoff from the receiving node must pull the published source chat into a local chat copy before execution begins.
+- After the receiving node pulls the published chat during acceptance, the app must auto-submit the handed-off task prompt into that pulled chat so remote work starts from the accepted context without a second manual send.
 
 ## Non-functional
 
@@ -79,6 +84,9 @@ This feature defines the actual remote handoff contract and control plane after 
 - [ ] Handoff audit and reconciliation state is persisted and supports retry without duplicate artifact uploads.
 - [ ] Remote-produced artifacts remain staged until the user explicitly confirms apply-back into the local chat workspace.
 - [ ] Safety and approval handling is defined for sensitive bundles, including the export-policy categories that trigger approval or redaction.
+- [ ] The receiving node can review pending handoffs and explicitly accept them from a discoverable app UI that shows source context, task summary, and canonical remote target identity.
+- [ ] Source-side dispatch auto-publishes the chat snapshot when a remote handoff is queued from an unshared chat.
+- [ ] Accepting a pending handoff pulls the published source chat into a local receiving-node chat and auto-submits the handed-off task prompt into that pulled chat.
 
 # Open Questions
 
@@ -92,3 +100,5 @@ This feature defines the actual remote handoff contract and control plane after 
 - 2026-04-03: Refined BA requirements to align room identity and provenance scope with prior p2p decisions while keeping policy gaps open.
 - 2026-04-03: Added export-policy categories, explicit user confirmation before apply-back, and a requirement that long-running transfer and retry work not depend on a single request lifecycle.
 - 2026-04-04: Recorded PeerTrust as the authoritative issuer and the derived `${PEERTRUST_BASE_URL}/.well-known/jwks.json` verification contract for FEAT-005.
+- 2026-04-09: Added an explicit requirement for a discoverable receiver inbox UI so accepting pending handoffs is possible from the app rather than only through API knowledge.
+- 2026-04-09: Added explicit acceptance-flow requirements for source auto-publish, receiving-node pull, and auto-submission of the handed-off task prompt after acceptance.

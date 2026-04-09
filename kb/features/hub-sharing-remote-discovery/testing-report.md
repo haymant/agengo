@@ -3,7 +3,7 @@ title: Feature - Hub Sharing And Remote Discovery
 feature_id: FEAT-004
 artifact: testing-report
 status: draft
-version: 1.5
+version: 1.6
 owner_agent: qa
 parent_feature: kb/features/hub-sharing-remote-discovery
 related_artifacts:
@@ -38,6 +38,7 @@ FEAT-004 remains in testing-in-progress status. The backend now covers both chat
 | Focused automated share/pull evidence | Passed | `pnpm exec tsx tests/unit/share-store.test.ts` passed on 2026-04-04 for chat share creation, project share creation, project pull persistence, and local pull creation. |
 | Same-host multi-instance chat share or pull | Passed | `PORT=3102 pnpm exec playwright test tests/e2e/local-runtime.test.ts --project=e2e -g "shares and pulls a chat across two isolated same-host hub instances"` passed on 2026-04-05 and verified two isolated hub instances can share a chat from one node, list it remotely from the other node, and pull it into a local copy when both nodes point at the same shared filesystem share root. |
 | Society sidecar discovery and snapshot transport foundation | Passed (unit slice) | `pnpm exec tsx tests/unit/society-transport.test.ts` passed on 2026-04-05 and verified remote candidate discovery plus chat and project share publication, listing, record fetch, and pull behavior through `TRACOHUB_SOCIETY_BASE_URL` without `TRACOHUB_SHARE_ROOT`. |
+| Pulled-node Society candidate publication | Passed | `pnpm exec tsx tests/unit/society-transport.test.ts` passed on 2026-04-08 with coverage that pulling a shared project/chat republishes the pulling node's agent catalog into the original source room with `scopeState="pulled"`, allowing source-side chats to discover that remote node. |
 
 # Defects
 
@@ -61,7 +62,7 @@ The checked discovery criteria have direct automated evidence. The first four cr
 
 - Add project-level same-host route evidence so project share or pull is proven the same way as chat share or pull.
 - Replace the shared-filesystem registry path with Society-backed same-host discovery and transport coverage once the transport harness is wired into automated SIT.
-- Extend the Society sidecar foundation with remote candidate publication, same-host Society SIT, and UI-level remote `@` execution coverage.
+- Extend the Society sidecar foundation with same-host Society SIT and UI-level remote `@` execution coverage.
 
 # Change Log
 
@@ -73,3 +74,4 @@ The checked discovery criteria have direct automated evidence. The first four cr
 - 2026-04-05: Added Playwright evidence for pulled-project chat discovery, remote chat pull, and persisted memory provenance within the pulled-project workflow.
 - 2026-04-05: Added unit evidence for the Society sidecar discovery and snapshot-transport foundation when `TRACOHUB_SHARE_ROOT` is unset.
 - 2026-04-08: Added canonical public identity-label evidence for remote share summaries, remote pull search, and composer `@` suggestions.
+- 2026-04-08: Added unit evidence that pulled project/chat snapshots re-publish the pulling node into the original source room, fixing source-side Society discovery for remote `@` suggestions.
