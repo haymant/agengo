@@ -1,0 +1,56 @@
+{
+  "artifacts": [
+    {
+      "label": "node-1-screencast",
+      "path": "/home/data/git/haymant/traco/kb/journeys/handoff/demo-run/raw-video/node-1.webm",
+      "type": "video/webm"
+    },
+    {
+      "label": "node-2-screencast",
+      "path": "/home/data/git/haymant/traco/kb/journeys/handoff/demo-run/raw-video/node-2.webm",
+      "type": "video/webm"
+    }
+  ],
+  "generatedAt": "2026-04-10T13:38:57.654Z",
+  "journeyId": "handoff",
+  "outputDir": "/home/data/git/haymant/traco/kb/journeys/handoff/demo-run",
+  "startedAt": "2026-04-10T13:38:16.580Z",
+  "steps": [
+    {
+      "actionElapsedMs": 0,
+      "endedAt": "2026-04-10T13:38:35.214Z",
+      "expectedEvidence": "Source node responds and the composer is visible.",
+      "id": "start-node-1",
+      "narration": "The source node is already running at http://localhost:3001 and is pre-authenticated. We will skip cold-start and login and proceed to verify the UI is ready.",
+      "narrationDurationMs": 12280,
+      "pauseProfile": "transition",
+      "screenshotPath": "/home/data/git/haymant/traco/kb/journeys/handoff/demo-run/screenshots/01-start-node-1.png",
+      "startedAt": "2026-04-10T13:38:20.004Z",
+      "timings": {
+        "actionSettleMs": 291,
+        "holdAfterActionMs": 2600,
+        "leadInPauseMs": 357,
+        "narrationDurationMs": 12280
+      },
+      "title": "Use running source node (node-1)"
+    },
+    {
+      "actionElapsedMs": 3976,
+      "endedAt": "2026-04-10T13:38:48.528Z",
+      "expectedEvidence": "The composer and user navigation controls are visible on the source node.",
+      "id": "authenticate-node-1",
+      "narration": "Connect to the running source node at http://localhost:3001 and authenticate so the demo runs inside a user session instead of an anonymous browser shell.",
+      "narrationDurationMs": 10480,
+      "pauseProfile": "action",
+      "screenshotPath": "/home/data/git/haymant/traco/kb/journeys/handoff/demo-run/screenshots/02-authenticate-node-1.png",
+      "startedAt": "2026-04-10T13:38:35.410Z",
+      "timings": {
+        "actionSettleMs": 253,
+        "holdAfterActionMs": 2191,
+        "leadInPauseMs": 192,
+        "narrationDurationMs": 10480
+      },
+      "title": "Authenticate to TracoHub on node 1"
+    }
+  ]
+}

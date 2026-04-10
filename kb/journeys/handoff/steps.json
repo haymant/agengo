@@ -1,0 +1,86 @@
+[
+  {
+    "id": "start-node-1",
+    "title": "Use running source node (node-1)",
+    "narration": "The source node is already running at http://localhost:3001 and is pre-authenticated. We will skip cold-start and login and proceed to verify the UI is ready.",
+    "pauseProfile": "transition",
+    "expectedEvidence": "Source node responds and the composer is visible."
+  },
+  {
+    "id": "authenticate-node-1",
+    "title": "Authenticate to TracoHub on node 1",
+    "narration": "Connect to the running source node at http://localhost:3001 and authenticate so the demo runs inside a user session instead of an anonymous browser shell.",
+    "pauseProfile": "action",
+    "expectedEvidence": "The composer and user navigation controls are visible on the source node."
+  },
+  {
+    "id": "create-project-and-select",
+    "title": "Create a project and switch selection",
+    "narration": "Create a new project and keep it selected so the next chat becomes part of the shared handoff context.",
+    "pauseProfile": "action",
+    "expectedEvidence": "A project is visible in the sidebar with the active state."
+  },
+  {
+    "id": "new-chat-under-project",
+    "title": "Create a new chat under the project",
+    "narration": "Open a fresh chat while the project is selected so the conversation inherits the project scoped context.",
+    "pauseProfile": "transition",
+    "expectedEvidence": "A blank chat route is open with the composer focused."
+  },
+  {
+    "id": "prompt-in-chat",
+    "title": "Prompt in the chat",
+    "narration": "Send the first prompt that sets up the handoff candidate and creates the source chat we will publish and transfer.",
+    "pauseProfile": "action",
+    "expectedEvidence": "The chat route contains a persistent chat identifier and the user message is stored."
+  },
+  {
+    "id": "publish-project-and-chat",
+    "title": "Publish the project and the chat",
+    "narration": "Publish the project snapshot and then publish the active chat snapshot so the second node can discover and pull the same working context.",
+    "pauseProfile": "explanation",
+    "expectedEvidence": "Active project and chat share identifiers exist in the source node APIs."
+  },
+  {
+    "id": "start-node-2",
+    "title": "Use running target node (node-2)",
+    "narration": "The target node is already running at http://localhost:3000 and is pre-authenticated. We will skip cold-start and login; verify the node is reachable and ready to pull the published project.",
+    "pauseProfile": "transition",
+    "expectedEvidence": "Target node responds and the pull project control is visible."
+  },
+  {
+    "id": "pull-project-and-chat-on-node-2",
+    "title": "Pull the published project and chat on node 2",
+    "narration": "On the running target node at http://localhost:3000 (already authenticated), pull the remote project through the sidebar, switch into the pulled project, and then pull the published chat snapshot into that local workspace.",
+    "pauseProfile": "explanation",
+    "expectedEvidence": "The pulled project is visible on node 2 and the pulled chat opens with the source message history."
+  },
+  {
+    "id": "discover-remote-agent-from-node-1",
+    "title": "Use at mention discovery from node 1",
+    "narration": "Back on node one, type the at symbol to discover remote agents from node two, then select the reviewer route so the next prompt targets that remote node.",
+    "pauseProfile": "action",
+    "expectedEvidence": "The route selector shows the remote reviewer from node 2."
+  },
+  {
+    "id": "dispatch-handoff-from-node-1",
+    "title": "Prompt the remote agent to handoff at node 1",
+    "narration": "Send the remote reviewer prompt from node one so the system creates a pending handoff session instead of continuing locally.",
+    "pauseProfile": "confirmation",
+    "expectedEvidence": "Node 1 shows a queued handoff confirmation message."
+  },
+  {
+    "id": "accept-handoff-on-node-2",
+    "title": "Accept the handoff at node 2",
+    "narration": "On the running target node at http://localhost:3000, open the handoff inbox, inspect the pending request, and accept it so the remote node can continue from the transferred prompt.",
+    "pauseProfile": "confirmation",
+    "expectedEvidence": "The inbox item changes to accepted."
+  },
+  {
+    "id": "verify-handoff-outcome",
+    "title": "Verify the handoff outcome",
+    "narration": "Finish by verifying that the source session reflects the accepted state, proving that the remote handoff completed across the two isolated nodes.",
+    "pauseProfile": "explanation",
+    "expectedEvidence": "The handoff session status is accepted on the source node."
+  }
+]

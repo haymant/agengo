@@ -30,7 +30,11 @@ CLI usage notes:
 
 When used as a skill, pass the prompt text via the prompt field (CLI `--prompt-str`) or supply a file path with `--prompt-file` so the script reads the intended transcript instead of a hardcoded string.
 
-**Reference audio:** Uses `voice_sample.wav` placed in the skill folder (or full path you provide).
+**Reference audio:** Uses `voice_sample.wav` placed in the skill folder (or full path you provide), e.g., to you could you `arecord` to prepare it:
+
+```bash
+arecord -f S16_LE -r 48000 -c 1 voice_sample.wav
+```
 
 When executing the TTS script, always run it with:
 ```bash
