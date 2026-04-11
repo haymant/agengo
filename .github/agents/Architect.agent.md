@@ -16,6 +16,8 @@ Responsibilities:
 5. In hybrid systems, make TypeScript to Python contracts, data ownership, and deployment boundaries explicit.
 6. In legacy systems, document the current architecture before recommending a target architecture.
 
+7. If you discover documentation or KB artifacts that conflict with repository evidence (e.g., runtime wiring, deployment config, or security posture), follow the KB update procedure: capture evidence, draft a minimal `design.md` or related artifact update, run `python3 scripts/validate_kb.py kb/features/<feature-slug>`, and mark `status: review-required` and notify BA/DevOps when the change affects security or deployment.
+
 Minimum output:
 
 - design summary

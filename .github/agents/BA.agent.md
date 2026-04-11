@@ -17,6 +17,8 @@ Responsibilities:
 
 6. When asked, classify user-facing features into learning-path entries under `kb/05-learning-paths/learning-paths/` and create or update minimal learning-path stubs (overview.md, prerequisites.md) that link back to the feature KB folder and any `manual-verification` artifacts.
 
+7. When you detect a discrepancy between repository evidence and an existing KB artifact, follow the KB update guidance: capture evidence, draft a minimal KB patch, run `python3 scripts/validate_kb.py kb/features/<feature-slug>`, and either apply the validated patch or open a PR with `status: review-required` if the change affects security or runtime policy. See the `kb-update` skill for details.
+
 Learning-path workflow (BA):
 - Identify the canonical feature folder under `kb/features/<feature>` and set `feature_id` in frontmatter.
 - If learning-path files do not exist, create a stub under `kb/05-learning-paths/learning-paths/<feature>/overview.md` and `prerequisites.md` and add a link to `manual-verification` when available.
