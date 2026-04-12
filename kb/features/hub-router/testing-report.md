@@ -20,6 +20,8 @@ change_log:
   - Added passing remote route-discovery browser evidence after route-options refresh hardening on 2026-04-12
   - Added unit evidence for channel-identity mention suggestions and re-ran Telegram group-trigger guard coverage on 2026-04-12
   - Added live Telegram capability evidence and privacy-mode diagnostics for ordinary group delivery on 2026-04-12
+  - Added focused execution and parsing evidence for Telegram bot-trigger routing, runtime remote handoff, and inbound sender metadata on 2026-04-12
+  - Added focused worker-heartbeat and Telegram agent-discovery evidence after fixing dev-all startup readiness and local-plus-remote /agents output on 2026-04-12
 ---
 
 # Summary
@@ -151,6 +153,56 @@ pnpm exec tsx tests/unit/channel-runtime-routing.test.ts
 channel runtime routing tests passed
 ```
 
+## 2026-04-12 (Telegram bot-trigger execution and sender metadata)
+
+- Added runtime support for stripping a leading Telegram bot mention, routing `@maketraderbot {prompt}` through the default execution path, exposing `/agents` as a room-scoped discovery command, and routing `@maketraderbot owner/node/agent {prompt}` through the same-room remote handoff path.
+- Added persisted message metadata for inbound sender identity so grouped channel messages can render sender initials and labels in the chat transcript.
+- Added focused unit coverage for canonical remote-route parsing, including Telegram-safe bare canonical paths, and runtime remote handoff execution with sender metadata persistence on saved user messages.
+- Ran changed-file diagnostics successfully for the runtime inbound route, runtime execution layers, updated message UI, and focused tests.
+- Verified a fresh local dev server on port 3000 now loads `/api/channels/runtime/configs` cleanly again and returns the expected `401 unauthorized` response instead of a compile-time `500`.
+- Attempted a project-wide `pnpm exec tsc --noEmit`; the changed slice compiled cleanly after local fixes, but the run remains blocked by pre-existing unrelated TypeScript errors in existing end-to-end and unit test files outside this slice.
+
+```
+pnpm exec tsx tests/unit/chat-routing.test.ts
+chat routing tests passed
+
+pnpm exec tsx tests/unit/channel-runtime-routing-execution.test.ts
+channel runtime routing execution tests passed
+
+pnpm exec tsx tests/unit/channel-pi-handoff.test.ts
+channel pi handoff tests passed
+
+Changed-file diagnostics: no errors in runtime-execution-core.ts, runtime-execution.ts, inbound/route.ts, message.tsx, chat-routing.test.ts, and channel-runtime-routing-execution.test.ts.
+
+curl http://127.0.0.1:3000/api/channels/runtime/configs
+401 unauthorized
+```
+
+## 2026-04-12 (worker-status truthfulness and Telegram /agents output)
+
+- Updated `dev:all` to wait for the authenticated runtime configs endpoint before spawning the channel worker, so worker startup no longer races ahead of worker-authenticated app readiness.
+- Updated worker sync to stamp `workerHeartbeatAt` before per-channel startup, which preserves `worker running` visibility in settings even when Telegram startup fails because of an invalid token or other runtime error.
+- Updated Telegram privacy-mode guidance so the settings hint now explains that direct mentions, replies to the bridge, and supported commands such as `/agents` still work with privacy mode enabled, while ordinary group messages still require Group Privacy to be disabled in BotFather.
+- Updated Telegram `/agents` to return local/default Tracohub targets plus remote room candidates, with project and room diagnostics when remote discovery is empty.
+- Ran focused unit coverage for worker heartbeat stamping, Telegram discovery formatting, existing route parsing, runtime execution, and Telegram privacy diagnostics.
+
+```
+pnpm exec tsx tests/unit/channel-worker-manager.test.ts
+channel worker manager tests passed
+
+pnpm exec tsx tests/unit/telegram-discovery.test.ts
+telegram discovery tests passed
+
+pnpm exec tsx tests/unit/chat-routing.test.ts
+chat routing tests passed
+
+pnpm exec tsx tests/unit/channel-runtime-routing-execution.test.ts
+channel runtime routing execution tests passed
+
+pnpm exec tsx tests/unit/telegram-polling.test.ts
+telegram polling tests passed
+```
+
 # Acceptance Criteria Status
 
 | Acceptance Criterion | Status | Evidence |
@@ -162,6 +214,8 @@ channel runtime routing tests passed
 | FEAT-006-compatible memory and audit metadata can carry thread and sub-room scope. | Passed | `pnpm exec tsx tests/unit/commit-store.test.ts` and the targeted commit-route Playwright case both verified persisted `threadId` and `subRoomId` metadata. |
 | Same-room routing reuse remains explicit. | Passed | The targeted Playwright route-discovery case passed and confirmed canonical remote room suggestions in both the compact selector and the `@` mention flow. |
 | Composer `@` suggestions can surface discovered channel identities without treating them as provider routes. | Passed | `pnpm exec tsx tests/unit/chat-routing.test.ts` and `pnpm exec tsx tests/unit/chat-route-options.test.ts` now cover channel-identity mention ranking and route-options exposure. |
+| Telegram bot mentions can trigger default or canonical remote agent execution without losing inbound sender identity. | Passed | `pnpm exec tsx tests/unit/chat-routing.test.ts`, `pnpm exec tsx tests/unit/channel-runtime-routing-execution.test.ts`, and `pnpm exec tsx tests/unit/channel-pi-handoff.test.ts` passed after wiring bot-mention stripping, Telegram-safe canonical remote route parsing, runtime remote handoff, and sender metadata persistence. |
+| `dev:all` worker startup and Telegram `/agents` output remain truthful for local development and room discovery. | Passed | `pnpm exec tsx tests/unit/channel-worker-manager.test.ts` verified worker sync stamps `workerHeartbeatAt`, and `pnpm exec tsx tests/unit/telegram-discovery.test.ts` verified `/agents` now returns local targets plus remote diagnostics. |
 
 # Residual Risks
 
@@ -170,6 +224,8 @@ channel runtime routing tests passed
 - Human-target delivery semantics still need a dedicated delivery or notification implementation slice beyond the current remote-agent and route-discovery support.
 - Telegram group behavior remains validated at the unit-policy layer; an end-to-end run against a real Telegram group mention or reply trigger is still pending.
 - Ordinary Telegram group messages will continue to fail until Group Privacy is disabled for the configured bot in BotFather and the worker is restarted; this is now diagnosed in-product but cannot be overridden by Tracohub code alone.
+- A repository-wide TypeScript compile is still blocked by unrelated existing test typing failures outside the touched hub-router files, so release confidence for this slice depends on focused test coverage rather than a clean global `tsc` run.
+- The new `dev:all` readiness gate is verified through focused unit coverage and code-path review, but a full automated end-to-end run of `PORT=3000 TRACOHUB_DATA_HOME=~/Documents/w0 TRACOHUB_SOCIETY_BASE_URL=http://127.0.0.1:3002 pnpm dev:all` plus authenticated settings-page assertion is still pending.
 
 # Change Log
 
@@ -180,3 +236,5 @@ channel runtime routing tests passed
 - 2026-04-12: Added passing route-discovery browser evidence after hardening composer route-option revalidation.
 - 2026-04-12: Added unit evidence for channel-identity composer suggestions and re-ran Telegram group guard coverage.
 - 2026-04-12: Added live Telegram capability evidence showing BotFather privacy mode blocked ordinary group messages and added startup diagnostics for that case.
+- 2026-04-12: Added focused runtime execution and metadata evidence for Telegram bot-trigger routing and canonical remote agent handoff.
+- 2026-04-12: Added focused evidence for worker heartbeat stamping, dev-all startup readiness, and Telegram local-plus-remote `/agents` output.

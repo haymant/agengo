@@ -18,6 +18,8 @@ change_log:
   - Recorded route-options refresh hardening and passing remote route-discovery verification on 2026-04-12
   - Added channel-identity mention suggestions and protected unknown prompt mentions from being misread as provider routes on 2026-04-12
   - Added Telegram privacy-mode diagnostics after confirming ordinary group messages were blocked before reaching Tracohub on 2026-04-12
+  - Added Telegram bot-trigger execution, canonical remote agent handoff parsing, and inbound sender metadata persistence on 2026-04-12
+  - Added authenticated dev-all worker readiness checks, worker heartbeat stamping, and local-plus-remote Telegram agent discovery output on 2026-04-12
 ---
 
 # Plan Summary
@@ -99,11 +101,17 @@ Current status:
 Current status:
 
 - Implemented Telegram and WhatsApp worker payload enrichment for DM versus group routing, including reply and mention metadata.
+- Telegram worker payloads now also forward the configured bot username so inbound routing can safely strip the leading bot mention before execution.
 - Implemented inbound route policy checks for group allowlists and mention gating.
 - Implemented deterministic thread and sub-room binding for grouped traffic in the runtime inbound route.
 - Confirmed against the live `~/Documents/w0` runtime that the active Telegram channel had `enableGroupRouting=true`, `requireGroupMention=false`, an open group allowlist, and a valid default project, so the missing group chat was not caused by Tracohub policy gating.
 - Confirmed the configured bot reported `canReadAllGroupMessages=false` from Telegram Bot API `getMe`, which means BotFather privacy mode was still blocking ordinary group messages before they reached the worker.
 - Telegram startup and polling status now preserve a connected-state warning for that privacy-mode condition so the settings page can explain why ordinary group traffic is not creating chats.
+- Inbound Telegram execution now supports `@botname {prompt}` for default routing, `@botname /agents` for same-room remote candidate discovery, and `@botname owner/node/agent {prompt}` for same-room remote agent dispatch without relying on a second Telegram `@` mention.
+- `dev:all` now waits for the authenticated runtime configs endpoint before starting the worker, reducing false starts where the web server was listening but worker-authenticated runtime APIs were not yet ready.
+- Worker sync now stamps `workerHeartbeatAt` for each enabled channel before per-channel startup so settings can distinguish `worker running but Telegram failed to connect` from `worker not started`.
+- Telegram settings guidance now explicitly states that privacy mode still allows direct mentions, replies to the bridge, and supported commands such as `/agents`, while ordinary group traffic still requires disabling Group Privacy in BotFather.
+- Runtime execution now persists inbound sender metadata and route scope metadata on saved messages so grouped channel messages retain sender identity and thread or sub-room context.
 
 ## Slice 4: Route Options And Execution
 
@@ -118,6 +126,9 @@ Current status:
 - Route options now revalidate when the compact selector opens and when `@` mention discovery begins, preventing stale remote-candidate caches after project-scoped discovery changes.
 - Route options now return mentionable channel identities discovered from enabled channel configs, and the composer prioritizes those identities in the local `@` suggestions.
 - Unknown leading `@mentions` now remain plain prompt text unless they match a known local provider route, which prevents Telegram-style handles from being misrouted as provider targets.
+- Canonical remote route parsing now accepts `@owner/node/agent` at the start of a prompt, which is reused by Telegram inbound handling after the leading bot mention is stripped.
+- Runtime remote-agent handoff behavior is now shared by channel-triggered execution as well as the existing composer and selector paths.
+- Telegram `/agents` now returns local/default Tracohub targets in addition to remote same-room candidates, and when no remote candidates exist it replies with project or room diagnostics and the next discovery step instead of a generic empty-state message.
 - Human-target routing semantics remain unfinished and still need a dedicated delivery or notification implementation slice.
 
 ## Slice 5: Audit, Memory, And Verification
@@ -131,6 +142,9 @@ Current status:
 - Implemented optional `threadId` and `subRoomId` persistence in committed memory-bundle metadata and audit records.
 - Added focused unit coverage and targeted Playwright evidence for persisted channel policy and commit-scope metadata.
 - Added passing browser evidence for canonical remote route discovery in both the compact selector and the `@` mention flow.
+- Added focused unit coverage for canonical remote route parsing and runtime remote handoff execution, including persisted inbound sender metadata.
+- Chat message rendering now shows an initials badge plus sender label for inbound participant messages when sender metadata is present.
+- Added focused unit coverage for worker-sync heartbeat stamping and Telegram agent-discovery response formatting.
 
 # Dependencies
 
