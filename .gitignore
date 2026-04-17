@@ -92,3 +92,5 @@ voice_sample.wav
 
 deck-*
 prod-run
+
+__pycache__/

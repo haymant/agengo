@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "chatterbox-tts>=0.1.7",
+    "livekit-agents>=1.5.2",
+    "livekit-plugins-silero>=1.5.2",
     "pip>=26.0.1",
     "soundfile>=0.13.1",
     "torch>=2.6.0",

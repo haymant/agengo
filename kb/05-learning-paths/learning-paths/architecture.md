@@ -8,121 +8,99 @@ owner_agent: Guide
 
 This diagram shows the Hub's high-level architecture and how the components described in the KB (channel adapters, runtime execution, PI integration, registries, and persistence) interact to satisfy the requirements for deterministic session mapping, adapter parity, sandboxed execution, and observability.
 
-```mermaid
-flowchart LR
-  subgraph Clients
-    WebClient["Web UI (Vercel AI SDK client)"]
-    ExtChannels[("External Channels\nWhatsApp / Telegram / SMS")]
-  end
 
-  subgraph Gateway
-    Ingress["Channel Gateway / HTTP Routes"]
-    WebAdapter["WebAdapter (server-side shim)"]
-    WhatsAppAdapter["WhatsAppAdapter"]
-    TelegramAdapter["TelegramAdapter"]
-  end
 
-  subgraph Runtime
-    Router["Runtime Routing / Channel Normalizer"]
-    SessionMap[("ChatProviderSession DB")]
-    ChatRuntime["executeRuntimeChatTurn"]
-    PolicyExec["Guarded Executor / Allowlist & Caps"]
-  end
+    This file now presents a compact, runnable-service view of the Hub implementation (what runs locally or in staging). Experimental analytics components that live in the repo are noted but not shown as active runtime boxes.
 
-  subgraph Execution
-    ExecFrame["Execution Frame / Context"]
-    AgentDef["Agent Definition (manifests)"]
-    SkillLoader["Skill Loader / Sandbox Provisioner"]
-    RepoIndex["Repo Files (indexed knowledge)"]
-    EphemeralMem["Ephemeral Memory (per-turn/session)"]
-    ToolBindings["Tool Bindings & Credentials"]
-  end
+    ```mermaid
+    flowchart LR
+      subgraph V2["Runnable Services — v2"]
+        direction LR
 
-  subgraph PI
-    PIRegistry["ModelRegistry / SessionManager"]
-    PICore["pi-agent-core / pi-ai"]
-    PICoding["pi-coding-agent (embedded UI/runtime)"]
-  end
+        subgraph S1["1 — Hub"]
+          direction TB
+          WebClient["Web UI / Server routes (hub)"]
+          Ingress["Channel Gateway / API routes"]
+          Router["Runtime Router / Normalizer"]
+          ChatRuntime["Chat runtime / executeRuntime"]
+        end
 
-  subgraph Infra
-    DB[("Postgres / Drizzle DB")]
-    ObjectStore[("Vercel Blob / S3")]
-    Observability["OpenTelemetry / Audit Logs"]
-    ProviderConfig["Provider Configs & Secrets"]
-  end
+        subgraph S2["2 — Transcriber"]
+          direction TB
+          TranscriberApp["FastAPI transcriber (hub/transcriber-service) — port 3003"]
+        end
 
-  subgraph P2P
-    Sidecar["P2P Sidecar (local)"]
-    P2PNetwork[("Peer-to-peer Network")]
-    OIDCProvider["OIDC Provider (Peerturest)"]
-    RemoteHandoff["Remote Handoff Protocol\n(Signaling & Token Handover)"]
-  end
+        subgraph S3["3 — LiveKit Server (external)"]
+          direction TB
+          LiveKitServer["LiveKit media server (rooms, tracks) — external"]
+        end
 
-  WebClient -->|"client events"| Ingress
-  ExtChannels -->|"webhooks"| Ingress
+        subgraph S4["4 — LiveKit Agent Runtime"]
+          direction TB
+          AgentServer["Agent runtime / run_agent.py (optional)"]
+        end
 
-  Ingress --> Router
-  Router --> WebAdapter
-  Router --> WhatsAppAdapter
-  Router --> TelegramAdapter
+        subgraph S6["6 — Channels Worker"]
+          direction TB
+          ChannelsWorker["Background worker (lib/channels/worker.ts)"]
+        end
 
-  Router -->|"resolve session"| SessionMap
-  Router --> ChatRuntime
+        subgraph S7["7 — Peertrust (OIDC)"]
+          direction TB
+          PeertrustApp["Peertrust (peertrust/) — OIDC provider"]
+        end
 
-  ChatRuntime -->|"enter execution"| ExecFrame
-  ExecFrame -->|"load agent"| AgentDef
-  ExecFrame -->|"load skill"| SkillLoader
-  ExecFrame -->|"read knowledge"| RepoIndex
-  ExecFrame -->|"use ephemeral"| EphemeralMem
-  ExecFrame -->|"policy check"| PolicyExec
+        subgraph S8["8 — Society Sidecar"]
+          direction TB
+          Sidecar["Society sidecar (mock or real) — scripts/mock-society-sidecar.js"]
+        end
 
-  SkillLoader -->|"provision sandbox"| PIRegistry
-  AgentDef -->|"register"| PIRegistry
-  RepoIndex -->|"indexed content"| PIRegistry
+      end
 
-  PolicyExec -->|"resolve creds"| ToolBindings
-  ToolBindings -->|"provide creds"| ExecFrame
+      WebClient -->|"http/ws"| S1
+      S1 -->|"mint tokens / signal"| S3
+      S1 -->|"attach transcriber"| S2
+      S4 -->|"agent jobs"| S2
+      S2 -->|"post transcripts"| S1
+      S6 -->|"background jobs / webhooks"| S1
+      S1 -->|"society discovery / publish"| S8
+      S7 -->|"auth / token issuance"| S1
+      S7 -->|"auth / token issuance"| S8
 
-  PIRegistry --> PICore
-  PICore --> PICoding
+      subgraph Infra["Shared Infra"]
+        DB["Postgres / Drizzle (ChatProviderSession)"]
+        ObjectStore["Blob storage (attachments)"]
+        Observability["OpenTelemetry / Audit Logs"]
+      end
 
-  ChatRuntime --> DB
-  SessionMap --> DB
-  ProviderConfig --> PIRegistry
+      S1 --> DB
+      S1 --> ObjectStore
+      ChannelsWorker --> Observability
+    ```
 
-  Observability -->|"trace exec frame"| ExecFrame
-  Observability -->|"traces & audit"| PICore
-  Observability -->|"traces"| ChatRuntime
-  ObjectStore -->|"attachments"| DB
+    Service index (concise)
 
-  Sidecar -->|"peer discovery"| P2PNetwork
-  Ingress -->|"optional local forward"| Sidecar
-  Sidecar -->|"authenticate"| OIDCProvider
-  Sidecar -->|"handoff"| RemoteHandoff
-  RemoteHandoff -->|"session tokens"| SessionMap
-  P2PNetwork -->|"attachments/streams"| ObjectStore
+    - 1 — Hub: [hub/package.json](hub/package.json)
+      - Dev: `cd hub && pnpm install && pnpm dev` (or `pnpm run dev:all`)
 
-  style SessionMap fill:#333,stroke:#333,stroke-width:1px
+    - 2 — Transcriber: [hub/transcriber-service/transcriber.py](hub/transcriber-service/transcriber.py)
+      - Local: `cd hub/transcriber-service && python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && python transcriber.py`
+      - Health: `GET /health` (default port 3003)
+
+    - 3 — LiveKit server: external (use Docker for local testing)
+      - Example: `docker run --name livekit -p 7880:7880 -p 7881:7881 -e LIVEKIT_API_KEY=<key> -e LIVEKIT_API_SECRET=<secret> livekit/livekit-server:stable`
+
+    - 4 — LiveKit Agent runtime (optional): [hub/transcriber-service/run_agent.py](hub/transcriber-service/run_agent.py)
+      - `cd hub/transcriber-service && source .venv/bin/activate && python run_agent.py`
+
+    - 6 — Channels worker: `pnpm exec tsx lib/channels/worker.ts` (run from `hub`)
+
+    - 7 — Peertrust (OIDC): [peertrust/package.json](peertrust/package.json)
+      - Dev: `cd peertrust && pnpm install && pnpm dev`
+
+    - 8 — Society sidecar: `scripts/mock-society-sidecar.js` (mock); run with `node` or use the Hub integration for local testing.
+
+    Note: the `lake/` DuckDB FastAPI exists in the repo as an experimental analytics/query service (see `lake/main.py`) but is not modelled as an active runtime dependency for the Hub; keep in repo for local analytics and experiments.
+
+    If you'd like, I can (a) export this V2 mermaid diagram to PNG/SVG, or (b) add a small `docker-compose.yml` that wires Hub, Postgres, Transcriber and a local LiveKit for local development.
   style PIRegistry fill:#444,stroke:#333,stroke-width:1px
-  style PolicyExec fill:#555,stroke:#333,stroke-width:1px
-```
-- DB / `ChatProviderSession`: persist mapping so a single chat keeps the same PI session when appropriate.
-
-How this fulfills requirements
-
-- Deterministic session mapping: the `SessionMap` ensures chat → PI session determinism across adapters and server restarts.
-- Adapter parity: server-side `WebAdapter` plus adapter interfaces guarantee the same normalized model for web and external channels.
-- Sandboxing & safety: the `PolicyExec` layer centralizes allowlists and caps, preventing untrusted skills from performing side-effects without checks.
-- Observability & auditability: traces from `ChatRuntime` and `PI` flows are collected by OpenTelemetry and audit logs for post-hoc review.
-
-Execution context: how `executeRuntime` composes the runtime
-
-- Agent definition (bootstrap + evolutionary adding): agents are described by a small manifest (id, version, declared skills, signing metadata). The runtime boots with a set of pre-approved agent manifests and can dynamically load additional signed agent bundles from `PIRegistry` or a trusted artifact store. Newly added agents are validated (signature, policy checks) before being made available to `executeRuntime`.
-- Skill definition and loading: skills are packaged code/artifacts with a declarative `skill.json` (capabilities, API surface, required resources) and one or more entrypoint scripts. `PIRegistry` loads skill metadata, performs static safety checks, and provisions isolated execution sandboxes (worker processes, containers, or WASM VMs) where skill scripts run with strictly limited tool bindings.
-- Role of files in the working git repo: repository files act as a first-class knowledge bundle; selected repo paths can be indexed and exposed as read-only knowledge to agents (via an indexed search/embedding service or a virtual read-only filesystem). File provenance (git commit, path) is recorded so agents can cite sources and the system can re-index on repo updates. Only allowlisted repo areas are exposed to avoid leaking secrets.
-- Ephemeral memory: `executeRuntime` maintains per-turn and per-session ephemeral memory (in-process or cached in Redis) for short-lived context (recent messages, tool call results, ephemeral keys). Ephemeral memory is not persisted by default; persistent state must be explicitly committed to `ChatProviderSession` or DB by an approved action.
-- Tool bindings, credentials, and policy: the execution context includes a table of allowed tool bindings and credentials (scoped tokens, mTLS creds) resolved from `ProviderConfig` and the OIDC provider. `PolicyExec` enforces allowlists, caps, and token scope checks before any skill or agent call that performs side effects.
-- Observability & auditing in-context: each execution frame is traced and logged with a unique execution id; tool calls, handoffs, and token exchanges are recorded to audit logs and OpenTelemetry spans for replay and forensic review.
-- Missing/other considerations: key rotation, revocation (for handoff tokens), deterministic replay hooks for debugging, and reconciliation jobs for failed remote handoffs are integral to a production-ready execution context.
-
-If you'd like, I can also: (a) export this diagram as an image, (b) add a second diagram showing data persistence and migration steps for `ChatProviderSession`, or (c) produce a one-page `design.md` draft that expands these sections into the KB feature folder.
