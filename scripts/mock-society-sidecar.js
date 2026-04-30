@@ -18,9 +18,14 @@ import { URL } from "node:url";
 
 const args = process.argv.slice(2);
 let port = 3001;
+let host = process.env.HOST || "0.0.0.0";
 for (let i = 0; i < args.length; i++) {
   if ((args[i] === "-p" || args[i] === "--port") && args[i + 1]) {
     port = Number(args[i + 1]);
+  }
+
+  if ((args[i] === "-h" || args[i] === "--host") && args[i + 1]) {
+    host = args[i + 1];
   }
 }
 
@@ -36,7 +41,7 @@ function sendJson(res, payload, status = 200) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const reqUrl = new URL(req.url || "/", `http://127.0.0.1:${port}`);
+  const reqUrl = new URL(req.url || "/", `http://${host}:${port}`);
 
   const body = await new Promise((resolve) => {
     let collected = "";
@@ -215,8 +220,8 @@ const server = http.createServer(async (req, res) => {
   sendJson(res, { error: "not found" }, 404);
 });
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`Mock Society sidecar listening at http://127.0.0.1:${port}`);
+server.listen(port, host, () => {
+  console.log(`Mock Society sidecar listening at http://${host}:${port}`);
   console.log("Endpoints: GET/POST /v1/discovery/candidates, POST/GET /v1/shares/chat, GET /v1/shares/chat/:id, POST/GET /v1/shares/project, GET /v1/shares/project/:id");
   console.log("Press Ctrl+C to stop");
 });

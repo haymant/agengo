@@ -1,0 +1,202 @@
+services:
+  # Start the complete containerized hub meeting stack with:
+  # docker compose -f docker-compose.dev.yml --profile full-stack up -d --build --wait livekit transcriber-mock society-sidecar hub channels-worker
+  # Run the full Playwright e2e project against that compose stack with:
+  # docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner
+  livekit:
+    image: livekit/livekit-server:latest
+    command:
+      - --dev
+      - --bind
+      - 0.0.0.0
+    ports:
+      - "${LIVEKIT_PORT:-7880}:${LIVEKIT_PORT:-7880}"
+      - "${LIVEKIT_PORT:-7880}:${LIVEKIT_PORT:-7880}/udp"
+
+  transcriber-mock:
+    image: node:24-bookworm-slim
+    working_dir: /workspace/hub
+    command:
+      - node
+      - scripts/mock-transcriber.mjs
+    environment:
+      HUB_URL: ${TRANSCRIBER_HUB_URL:-http://host.docker.internal:${HUB1_PORT:-3000}}
+      PORT: "${TRANSCRIBER_PORT:-3003}"
+      TRANSCRIBER_SHARED_SECRET: ${TRANSCRIBER_SHARED_SECRET:-test-secret}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./hub:/workspace/hub
+    ports:
+      - "${TRANSCRIBER_PORT:-3003}:${TRANSCRIBER_PORT:-3003}"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:' + (process.env.PORT || '3003') + '/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  transcriber-real:
+    profiles:
+      - real-transcriber
+    build:
+      context: ./hub/transcriber-service
+    environment:
+      HUB_URL: ${TRANSCRIBER_HUB_URL:-http://host.docker.internal:${HUB1_PORT:-3000}}
+      LIVEKIT_URL: ws://livekit:${LIVEKIT_PORT:-7880}
+      PORT: "${TRANSCRIBER_PORT:-3003}"
+      TRANSCRIBER_SHARED_SECRET: ${TRANSCRIBER_SHARED_SECRET:-test-secret}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    ports:
+      - "${TRANSCRIBER_PORT:-3003}:${TRANSCRIBER_PORT:-3003}"
+    depends_on:
+      - livekit
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:3003/health').getcode() == 200 else 1)"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  society-sidecar:
+    image: node:24-bookworm-slim
+    working_dir: /workspace
+    command:
+      - node
+      - scripts/mock-society-sidecar.js
+      - --port
+      - "${SOCIETY_PORT:-3001}"
+    volumes:
+      - ./scripts:/workspace/scripts
+    ports:
+      - "${SOCIETY_PORT:-3001}:${SOCIETY_PORT:-3001}"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:' + (process.env.SOCIETY_PORT || '3001') + '/v1/discovery/candidates').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  hub:
+    profiles:
+      - full-stack
+    image: node:24-bookworm-slim
+    working_dir: /workspace/hub
+    command: sh -lc "rm -rf ${TRACOHUB_DATA_HOME:-/tmp/tracohub-compose-hub} && npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm exec next dev --webpack --hostname 0.0.0.0 --port ${HUB1_PORT:-3000}"
+    environment:
+      AUTH_URL: http://hub:${HUB1_PORT:-3000}
+      AUTH_SECRET: ${AUTH_SECRET:-local-dev-auth-secret}
+      AUTH_TRUST_HOST: "true"
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret}
+      LIVEKIT_URL: ws://livekit:${LIVEKIT_PORT:-7880}
+      PORT: "${HUB1_PORT:-3000}"
+      TRACOHUB_DATA_HOME: /tmp/tracohub-compose-hub
+      TRANSCRIBER_SHARED_SECRET: ${TRANSCRIBER_SHARED_SECRET:-test-secret}
+      TRANSCRIBER_URL: http://${TRANSCRIBER_SERVICE:-transcriber-mock}:${TRANSCRIBER_PORT:-3003}
+      TRACOHUB_APP_URL: http://hub:${HUB1_PORT:-3000}
+      TRACOHUB_SOCIETY_BASE_URL: http://society-sidecar:${SOCIETY_PORT:-3001}
+      TRACOHUB_WORKER_SECRET: ${TRACOHUB_WORKER_SECRET:-local-worker-secret}
+    volumes:
+      - ./hub:/workspace/hub
+      - /workspace/hub/node_modules
+    ports:
+      - "${HUB1_PORT:-3000}:${HUB1_PORT:-3000}"
+    depends_on:
+      livekit:
+        condition: service_started
+      society-sidecar:
+        condition: service_healthy
+      transcriber-mock:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:' + (process.env.PORT || '3000') + '/login').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 30s
+
+  # Channels worker: run the long-lived channel runtime (Telegram polling, WhatsApp QR, etc.)
+  channels-worker:
+    profiles:
+      - full-stack
+    image: node:24-bookworm-slim
+    working_dir: /workspace/hub
+    # install pnpm and start the worker (dev-friendly: mounts source)
+    command: sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm channels:worker"
+    environment:
+      TRACOHUB_APP_URL: http://hub:${HUB1_PORT:-3000}
+      TRACOHUB_WORKER_SECRET: ${TRACOHUB_WORKER_SECRET:-local-worker-secret}
+    volumes:
+      - ./hub:/workspace/hub
+      - /workspace/hub/node_modules
+    depends_on:
+      hub:
+        condition: service_healthy
+      society-sidecar:
+        condition: service_healthy
+
+  e2e-runner:
+    profiles:
+      - e2e
+    image: mcr.microsoft.com/playwright:v1.58.2-noble
+    working_dir: /workspace/hub
+    shm_size: 1gb
+    command: sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test --project=e2e --reporter=line"
+    environment:
+      PLAYWRIGHT_TEST_BASE_URL: http://hub:${HUB1_PORT:-3000}
+      TEST_TRANSCRIBER_BASE_URL: http://transcriber-mock:${TRANSCRIBER_PORT:-3003}
+      TRACOHUB_E2E_LIVE_MEETING_STACK: "1"
+      TRACOHUB_EXPECT_MEETING_PROVIDER_MODE: live
+      TRACOHUB_SKIP_PLAYWRIGHT_WEBSERVER: "1"
+    volumes:
+      - ./hub:/workspace/hub
+      - /workspace/hub/node_modules
+    depends_on:
+      hub:
+        condition: service_healthy
+      transcriber-mock:
+        condition: service_healthy
+
+  # Optional containerized hub node templates. These are disabled by default
+  # (uncomment / enable when you want containerized Next.js instances)
+  # hub-node-1:
+  #   build:
+  #     context: ./hub
+  #     dockerfile: ./hub/Dockerfile
+  #   environment:
+  #     PORT: ${HUB1_PORT:-12240}
+  #   ports:
+  #     - "${HUB1_PORT:-12240}:${HUB1_PORT:-12240}"
+  #   volumes:
+  #     - ./hub:/app
+  #     - /app/node_modules
+  # hub-node-2:
+  #   <<: *hub-node-1
+  #   environment:
+  #     PORT: ${HUB2_PORT:-12241}
+  #   ports:
+  #     - "${HUB2_PORT:-12241}:${HUB2_PORT:-12241}"
+  # hub-node-3:
+  #   <<: *hub-node-1
+  #   environment:
+  #     PORT: ${HUB3_PORT:-12242}
+  #   ports:
+  #     - "${HUB3_PORT:-12242}:${HUB3_PORT:-12242}"

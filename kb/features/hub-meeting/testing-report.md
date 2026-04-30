@@ -3,14 +3,14 @@ title: Hub Meeting - Testing Report
 feature_id: hub-meeting
 artifact: testing-report
 status: in-progress
-version: 0.2
+version: 0.3
 owner_agent: QA
 parent_feature: kb/features/hub-meeting
 related_artifacts:
   - kb/features/hub-meeting/requirements.md
   - kb/features/hub-meeting/testing-plan.md
 phase_gate: testing-in-progress
-last_updated: 2026-04-17
+last_updated: 2026-04-30
 change_log:
   - Created testing report scaffold for implementation evidence on 2026-04-13
   - Recorded focused KB, unit, and Playwright evidence for the initial implementation on 2026-04-13
@@ -19,11 +19,17 @@ change_log:
   - Recorded the start of typed room-chat persistence and mock transcriber startup guidance on 2026-04-14
   - Recorded the start of the direct room-join HTTP transcriber implementation slice on 2026-04-17
   - Recorded passing authenticated real LiveKit plus local transcriber smoke evidence on 2026-04-17
+  - Recorded the checked-in compose dependency stack and passing fast Playwright regression after the local-dev pipeline update on 2026-04-19
+  - Recorded restored compose stack health plus passing compose-backed meeting and auth Playwright evidence on 2026-04-30
 ---
 
 # Result Summary
 
-Focused implementation verification is passing for KB validation, LiveKit provider unit coverage, the mocked-provider Playwright artifact-panel flow, the outbound Telegram helper unit coverage, the initial local transcriber client unit coverage, and an authenticated real LiveKit plus local transcriber smoke run. The HTTP transcriber service now joins the LiveKit room directly when no LiveKit JobContext is present, subscribes to the browser participant microphone track, and persists real transcript messages back into the parent chat.
+Focused implementation verification is passing for KB validation, LiveKit provider unit coverage, the mocked-provider Playwright artifact-panel flow, the outbound Telegram helper unit coverage, the initial local transcriber client unit coverage, an authenticated real LiveKit plus local transcriber smoke run, and a compose-backed Playwright meeting run against the checked-in full-stack dependency profile. The HTTP transcriber service now joins the LiveKit room directly when no LiveKit JobContext is present, subscribes to the browser participant microphone track, and persists real transcript messages back into the parent chat.
+
+On 2026-04-19, the repository also gained a checked-in `docker compose` dependency stack for local LiveKit, mock-transcriber, and Society-sidecar startup while preserving host-run Next.js HMR, plus helper scripts for focused meeting verification.
+
+On 2026-04-30, compose health was revalidated after reverting a failed repo-root mount experiment, the Hub container returned to healthy state, and the compose-backed meeting slice passed again on that restored baseline. Compose-backed auth coverage is also green, but the wider compose E2E project still contains failures outside the hub-meeting acceptance boundary.
 
 # Evidence
 
@@ -33,10 +39,14 @@ Focused implementation verification is passing for KB validation, LiveKit provid
 | Provider and token unit tests | Pass | `pnpm exec tsx tests/unit/livekit-provider.test.ts` passed on 2026-04-14 after the room-chat persistence follow-up changes. |
 | Local transcriber client unit tests | Pass | `pnpm exec tsx tests/unit/transcriber-client.test.ts` passed on 2026-04-14. |
 | Mock transcriber startup script tests | Pass | `pnpm exec tsx tests/unit/mock-transcriber-script.test.ts` passed on 2026-04-14 and verified `GET /health` plus `POST /sessions`. |
+| Local dependency bootstrap scripts | Pass | On 2026-04-19 the repository added `docker-compose.dev.yml` plus `pnpm dev:deps`, `pnpm dev:deps:real-transcriber`, and `pnpm dev:deps:down` to standardize local LiveKit, transcriber, and Society-sidecar startup. |
 | Direct room-join transcriber code path | Pass | On 2026-04-17 the Python transcriber restarted locally, received `POST /sessions`, joined the LiveKit room directly, and logged `subscribed to remote microphone` for the browser participant and a dedicated publisher participant. |
 | Telegram outbound helper tests | Pass | `pnpm exec tsx tests/unit/meeting-channel-announcements.test.ts` passed on 2026-04-13. |
 | Telegram creation path tests | Pending | Runtime command implementation is in place, but no automated or manual evidence has been recorded yet. |
 | Playwright artifact-panel create and join flow | Pass | `pnpm exec playwright test tests/e2e/meeting.test.ts --reporter=line` passed on 2026-04-13 using the mock provider path and embedded artifact rendering. |
+| Compose-backed meeting Playwright slice | Pass | `docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test tests/e2e/meeting.test.ts --project=e2e --reporter=line"` passed on 2026-04-30 in 3.5m after restoring compose stack health. |
+| Compose-backed auth regression slice | Pass | `docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test tests/e2e/auth.test.ts --project=e2e --reporter=line"` passed on 2026-04-30 with 10 passing tests after stabilizing settings hydration waits. |
+| Fast Playwright regression after dev-pipeline update | Pass | `pnpm test:fast` passed on 2026-04-19 after adding the split fast/slow runners and compose-backed local dependency guidance. |
 | Parent chat persistence for typed meeting room chat | Pending | |
 | Next prompt history includes persisted meeting records | Pending | |
 | Manual real LiveKit smoke test | Pass | On 2026-04-17, after signing in as `demo@traco.co`, the web client created meeting `b294dc4b-3c79-47f3-9c9a-34afdfc5bb2f` from chat `ba54119b-ceb9-4371-8ed0-c2f050ad815f`. The embedded meeting opened, Hub minted join tokens, the transcriber joined LiveKit directly, and new `user-c4f8ab58-3f42-4119-853f-8004384e896c transcript` messages were visible back in the parent chat. |
@@ -45,6 +55,7 @@ Focused implementation verification is passing for KB validation, LiveKit provid
 
 - None blocking in the mocked-provider path.
 - Residual risk: typed room-chat persistence, Telegram `/meeting` behavior, prompt-history carry-forward, and transcript quality under noisy local microphone input still need explicit verification evidence.
+- Residual risk: the wider compose-backed E2E project is not fully green yet, but the remaining failures are outside the currently verified hub-meeting and auth slices.
 
 # Acceptance Criteria Disposition
 
@@ -74,3 +85,5 @@ Focused implementation verification is passing for KB validation, LiveKit provid
 - 2026-04-14: Recorded passing mock transcriber startup script coverage and started the typed room-chat persistence implementation slice.
 - 2026-04-17: Recorded the start of the direct room-join HTTP transcriber implementation path; manual real-mic smoke evidence remains open.
 - 2026-04-17: Recorded a passing authenticated LiveKit smoke run after the direct room-join transcriber fix, including transcript persistence back into the parent chat.
+- 2026-04-19: Recorded the checked-in compose dependency stack for local LiveKit plus transcriber bootstrapping and a passing `pnpm test:fast` regression run after the dev-pipeline update.
+- 2026-04-30: Recorded restored compose stack health plus passing compose-backed meeting and auth validation on the current baseline while leaving broader compose failures explicitly out of scope for this feature gate.

@@ -18,6 +18,7 @@ change_log:
   - Added local transcriber, room-chat persistence, and prompt-history carry-forward coverage on 2026-04-14
   - Added a deterministic mock-transcriber startup path for local and CI-oriented verification on 2026-04-14
   - Clarified that manual real-mic verification should exercise the direct room-join HTTP transcriber path on 2026-04-17
+  - Added compose-backed dependency bootstrap guidance for local meeting verification on 2026-04-19
 ---
 
 # Test Strategy
@@ -56,6 +57,7 @@ Verify meeting creation, secure join-token issuance, local transcriber attachmen
 
 - Mock LiveKit provider and transcriber responses for CI.
 - Allow local development to use the mock transcriber service on `http://localhost:3003` when validating attach orchestration without real Whisper.
+- Allow local development to start the checked-in `docker compose` dependency stack for `livekit`, `transcriber-mock`, and `society-sidecar` while keeping Hub on the host for Next.js HMR.
 - Use existing Tracohub auth and channel-runtime test helpers where possible.
 - Reserve one manual local smoke run with real `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and the HTTP transcriber service at `TRANSCRIBER_URL` joining the room directly for non-simulated microphone capture.
 
@@ -71,3 +73,4 @@ Verify meeting creation, secure join-token issuance, local transcriber attachmen
 - 2026-04-13: Updated the testing plan for artifact-panel meeting rendering and web-triggered Telegram announcements.
 - 2026-04-14: Added local transcriber attach, room-chat persistence, and next-prompt carry-forward coverage requirements.
 - 2026-04-17: Clarified that the manual real-mic smoke path should validate the direct room-join HTTP transcriber runtime rather than transcript injection.
+- 2026-04-19: Added the compose-backed local dependency bootstrap path as the preferred setup for host-HMR meeting verification.

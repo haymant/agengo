@@ -95,3 +95,4 @@ prod-run
 dev-run
 
 __pycache__/
+.pnpm-store/

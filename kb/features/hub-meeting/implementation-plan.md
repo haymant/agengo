@@ -3,7 +3,7 @@ title: Hub Meeting - Implementation Plan
 feature_id: hub-meeting
 artifact: implementation-plan
 status: in-progress
-version: 0.2
+version: 0.3
 owner_agent: Developer
 parent_feature: kb/features/hub-meeting
 related_artifacts:
@@ -11,7 +11,7 @@ related_artifacts:
   - kb/features/hub-meeting/design.md
   - kb/features/hub-meeting/testing-plan.md
 phase_gate: implementation-in-progress
-last_updated: 2026-04-17
+last_updated: 2026-04-30
 change_log:
   - Created plan and started implementation slices for LiveKit-backed meeting sub-rooms on 2026-04-13
   - Shipped the initial web, API, persistence, and Telegram meeting slices with passing focused validation on 2026-04-13
@@ -19,11 +19,13 @@ change_log:
   - Added transcriber-first execution slices and prompt-history persistence scope on 2026-04-14
   - Started the typed room-chat persistence slice and added a mock transcriber startup path on 2026-04-14
   - Started the direct room-join transcriber implementation path for local non-simulated speech-to-text on 2026-04-17
+  - Added a compose-backed local dependency stack and host-HMR setup guidance for LiveKit, transcriber, and Society sidecar on 2026-04-19
+  - Recorded restored compose stack health and a passing compose-backed meeting verification slice on 2026-04-30
 ---
 
 # Plan Summary
 
-Implement hub-meeting in additive slices: KB completion, meeting provider primitives, transcriber orchestration, persistence, API routes, Telegram creation path, UI surfaces, room-chat persistence, and deterministic test coverage.
+Implement hub-meeting in additive slices: KB completion, meeting provider primitives, transcriber orchestration, persistence, API routes, Telegram creation path, UI surfaces, room-chat persistence, and deterministic test coverage. The compose-backed dependency stack is now revalidated on the current baseline for focused meeting verification, but wider compose-suite stabilization remains a separate slice.
 
 # Work Breakdown
 
@@ -93,6 +95,8 @@ Implement hub-meeting in additive slices: KB completion, meeting provider primit
 - Document `TRANSCRIBER_URL` as an HTTP base URL such as `http://localhost:3003`.
 - Add startup guidance for the local Whisper transcriber service and the expected `/health` plus `/sessions` contract.
 - Provide a local mock transcriber process for deterministic development of attach orchestration before the real Whisper runtime is wired end to end.
+- Check in a repository-level `docker compose` stack that starts the local LiveKit server, mock transcriber, and Society sidecar while keeping Hub on the host for Next.js HMR.
+- Provide helper scripts that wrap the compose stack for up, down, and focused meeting verification.
 
 # Dependencies
 
@@ -105,6 +109,7 @@ Implement hub-meeting in additive slices: KB completion, meeting provider primit
 - Run the repository KB validator after KB creation.
 - Run targeted unit tests after each backend slice.
 - Run focused Playwright tests after UI and API slices land.
+- Keep compose-backed verification focused on feature-owned meeting and auth slices until the wider full-stack E2E project is stabilized separately.
 
 # Rollback Notes
 
@@ -118,3 +123,5 @@ Implement hub-meeting in additive slices: KB completion, meeting provider primit
 - 2026-04-13: Shifted the canonical web meeting surface into the artifact panel and added outbound Telegram announcement delivery for web-created meetings.
 - 2026-04-14: Added explicit implementation slices for local transcriber orchestration, team startup guidance, typed room-chat persistence, and prompt-history verification.
 - 2026-04-17: Added the direct room-join transcriber implementation path as the primary local runtime for real microphone transcription.
+- 2026-04-19: Added the checked-in compose dependency stack plus README guidance so local meeting and sharing development can start with one deterministic dependency bootstrap step.
+- 2026-04-30: Revalidated the compose-backed meeting slice on a restored healthy stack and kept broader compose-suite stabilization as separate follow-up work.
