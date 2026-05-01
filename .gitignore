@@ -41,8 +41,7 @@ coverage/
 .eslintcache
 
 # dotenv environment variables file
-.env
-.env.*.local
+.env.*
 
 # IDEs and editors
 .vscode/

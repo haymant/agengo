@@ -1,8 +1,10 @@
 services:
   # Start the complete containerized hub meeting stack with:
-  # docker compose -f docker-compose.dev.yml --profile full-stack up -d --build --wait livekit transcriber-mock society-sidecar hub channels-worker
+  # docker compose --env-file .env.dev -f docker-compose.dev.yml --profile full-stack up -d --build --wait livekit transcriber-real society-sidecar hub channels-worker
   # Run the full Playwright e2e project against that compose stack with:
-  # docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner
+  # Manual host access uses http://hub.localhost:$HUB1_PORT/login, while the
+  # browser inside e2e-runner must use the Docker service name `hub`.
+  # docker compose --env-file .env.dev -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner
   livekit:
     image: livekit/livekit-server:latest
     command:
@@ -10,44 +12,46 @@ services:
       - --bind
       - 0.0.0.0
     ports:
-      - "${LIVEKIT_PORT:-7880}:${LIVEKIT_PORT:-7880}"
-      - "${LIVEKIT_PORT:-7880}:${LIVEKIT_PORT:-7880}/udp"
-
-  transcriber-mock:
-    image: node:24-bookworm-slim
-    working_dir: /workspace/hub
-    command:
-      - node
-      - scripts/mock-transcriber.mjs
-    environment:
-      HUB_URL: ${TRANSCRIBER_HUB_URL:-http://host.docker.internal:${HUB1_PORT:-3000}}
-      PORT: "${TRANSCRIBER_PORT:-3003}"
-      TRANSCRIBER_SHARED_SECRET: ${TRANSCRIBER_SHARED_SECRET:-test-secret}
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    volumes:
-      - ./hub:/workspace/hub
-    ports:
-      - "${TRANSCRIBER_PORT:-3003}:${TRANSCRIBER_PORT:-3003}"
-    healthcheck:
-      test:
-        - CMD
-        - node
-        - -e
-        - "fetch('http://127.0.0.1:' + (process.env.PORT || '3003') + '/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
-      interval: 5s
-      timeout: 5s
-      retries: 12
-      start_period: 5s
+      - "${LIVEKIT_PORT:-7880}:7880"
+      - "${LIVEKIT_PORT:-7880}:7880/udp"
+      
+  # never tested
+  # transcriber-mock:
+  #   image: node:24-bookworm-slim
+  #   working_dir: /workspace/hub
+  #   command:
+  #     - node
+  #     - scripts/mock-transcriber.mjs
+  #   environment:
+  #     HUB_URL: ${TRANSCRIBER_HUB_URL:-http://host.docker.internal:${HUB1_PORT:-3000}}
+  #     PORT: "${TRANSCRIBER_PORT:-3003}"
+  #     TRANSCRIBER_SHARED_SECRET: ${TRANSCRIBER_SHARED_SECRET:-test-secret}
+  #   extra_hosts:
+  #     - host.docker.internal:host-gateway
+  #   volumes:
+  #     - ./hub:/workspace/hub
+  #   ports:
+  #     - "${TRANSCRIBER_PORT:-3003}:${TRANSCRIBER_PORT:-3003}"
+  #   healthcheck:
+  #     test:
+  #       - CMD
+  #       - node
+  #       - -e
+  #       - "fetch('http://127.0.0.1:' + (process.env.PORT || '3003') + '/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 12
+  #     start_period: 5s
 
   transcriber-real:
     profiles:
+      - full-stack
       - real-transcriber
     build:
       context: ./hub/transcriber-service
     environment:
-      HUB_URL: ${TRANSCRIBER_HUB_URL:-http://host.docker.internal:${HUB1_PORT:-3000}}
-      LIVEKIT_URL: ws://livekit:${LIVEKIT_PORT:-7880}
+      HUB_URL: ${TRANSCRIBER_HUB_URL:-http://hub:${HUB1_PORT:-3000}}
+      LIVEKIT_URL: ${TRANSCRIBER_LIVEKIT_URL:-ws://livekit:7880}
       PORT: "${TRANSCRIBER_PORT:-3003}"
       TRANSCRIBER_SHARED_SECRET: ${TRANSCRIBER_SHARED_SECRET:-test-secret}
     extra_hosts:
@@ -61,7 +65,7 @@ services:
         - CMD
         - python
         - -c
-        - "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:3003/health').getcode() == 200 else 1)"
+        - "import os, sys, urllib.request; port = os.environ.get('PORT', '3003'); sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{port}/health').getcode() == 200 else 1)"
       interval: 10s
       timeout: 5s
       retries: 12
@@ -75,6 +79,8 @@ services:
       - scripts/mock-society-sidecar.js
       - --port
       - "${SOCIETY_PORT:-3001}"
+    environment:
+      SOCIETY_PORT: "${SOCIETY_PORT:-3001}"
     volumes:
       - ./scripts:/workspace/scripts
     ports:
@@ -95,23 +101,26 @@ services:
       - full-stack
     image: node:24-bookworm-slim
     working_dir: /workspace/hub
-    command: sh -lc "rm -rf ${TRACOHUB_DATA_HOME:-/tmp/tracohub-compose-hub} && npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm exec next dev --webpack --hostname 0.0.0.0 --port ${HUB1_PORT:-3000}"
+    command: sh -lc "rm -rf ${TRACOHUB_DATA_HOME:-/workspace/.playwright/data-home} && mkdir -p ${TRACOHUB_DATA_HOME:-/workspace/.playwright/data-home} && npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm exec next dev --webpack --hostname 0.0.0.0 --port ${HUB1_PORT:-3000}"
     environment:
-      AUTH_URL: http://hub:${HUB1_PORT:-3000}
       AUTH_SECRET: ${AUTH_SECRET:-local-dev-auth-secret}
       AUTH_TRUST_HOST: "true"
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY:-devkey}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET:-secret}
-      LIVEKIT_URL: ws://livekit:${LIVEKIT_PORT:-7880}
+      LIVEKIT_URL: ${TRACOHUB_LIVEKIT_URL:-ws://livekit:7880}
       PORT: "${HUB1_PORT:-3000}"
-      TRACOHUB_DATA_HOME: /tmp/tracohub-compose-hub
+      TRACOHUB_DATA_HOME: /workspace/.playwright/data-home
       TRANSCRIBER_SHARED_SECRET: ${TRANSCRIBER_SHARED_SECRET:-test-secret}
-      TRANSCRIBER_URL: http://${TRANSCRIBER_SERVICE:-transcriber-mock}:${TRANSCRIBER_PORT:-3003}
-      TRACOHUB_APP_URL: http://hub:${HUB1_PORT:-3000}
+      TRANSCRIBER_URL: http://${TRANSCRIBER_SERVICE:-transcriber-real}:${TRANSCRIBER_PORT:-3003}
+      TRACOHUB_APP_URL: http://hub.localhost:${HUB1_PORT:-3000}
       TRACOHUB_SOCIETY_BASE_URL: http://society-sidecar:${SOCIETY_PORT:-3001}
       TRACOHUB_WORKER_SECRET: ${TRACOHUB_WORKER_SECRET:-local-worker-secret}
+    networks:
+      default:
+        aliases:
+          - hub.localhost
     volumes:
-      - ./hub:/workspace/hub
+      - .:/workspace
       - /workspace/hub/node_modules
     ports:
       - "${HUB1_PORT:-3000}:${HUB1_PORT:-3000}"
@@ -120,7 +129,7 @@ services:
         condition: service_started
       society-sidecar:
         condition: service_healthy
-      transcriber-mock:
+      transcriber-real:
         condition: service_healthy
     healthcheck:
       test:
@@ -159,20 +168,23 @@ services:
     image: mcr.microsoft.com/playwright:v1.58.2-noble
     working_dir: /workspace/hub
     shm_size: 1gb
+    env_file:
+      - .env.dev
     command: sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test --project=e2e --reporter=line"
     environment:
       PLAYWRIGHT_TEST_BASE_URL: http://hub:${HUB1_PORT:-3000}
-      TEST_TRANSCRIBER_BASE_URL: http://transcriber-mock:${TRANSCRIBER_PORT:-3003}
+      TEST_SOCIETY_BASE_URL: http://society-sidecar:${SOCIETY_PORT:-3001}
+      TEST_TRANSCRIBER_BASE_URL: http://transcriber-real:${TRANSCRIBER_PORT:-3003}
       TRACOHUB_E2E_LIVE_MEETING_STACK: "1"
       TRACOHUB_EXPECT_MEETING_PROVIDER_MODE: live
       TRACOHUB_SKIP_PLAYWRIGHT_WEBSERVER: "1"
     volumes:
-      - ./hub:/workspace/hub
+      - .:/workspace
       - /workspace/hub/node_modules
     depends_on:
       hub:
         condition: service_healthy
-      transcriber-mock:
+      transcriber-real:
         condition: service_healthy
 
   # Optional containerized hub node templates. These are disabled by default

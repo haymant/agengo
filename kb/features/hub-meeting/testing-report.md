@@ -21,6 +21,7 @@ change_log:
   - Recorded passing authenticated real LiveKit plus local transcriber smoke evidence on 2026-04-17
   - Recorded the checked-in compose dependency stack and passing fast Playwright regression after the local-dev pipeline update on 2026-04-19
   - Recorded restored compose stack health plus passing compose-backed meeting and auth Playwright evidence on 2026-04-30
+  - Recorded passing compose-backed meeting and transcriber e2e (2 passed, 5.2m) after fixing compose-internal LiveKit URL, transcriber PORT env, and stable dev WorkSecret keys
 ---
 
 # Result Summary
@@ -44,7 +45,8 @@ On 2026-04-30, compose health was revalidated after reverting a failed repo-root
 | Telegram outbound helper tests | Pass | `pnpm exec tsx tests/unit/meeting-channel-announcements.test.ts` passed on 2026-04-13. |
 | Telegram creation path tests | Pending | Runtime command implementation is in place, but no automated or manual evidence has been recorded yet. |
 | Playwright artifact-panel create and join flow | Pass | `pnpm exec playwright test tests/e2e/meeting.test.ts --reporter=line` passed on 2026-04-13 using the mock provider path and embedded artifact rendering. |
-| Compose-backed meeting Playwright slice | Pass | `docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test tests/e2e/meeting.test.ts --project=e2e --reporter=line"` passed on 2026-04-30 in 3.5m after restoring compose stack health. |
+| Compose-backed meeting Playwright slice | Pass | `docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test tests/e2e/meeting.test.ts --project=e2e --reporter=line"` passed on 2026-04-30 in 3.5m after restoring compose stack health. Re-validated on current date after fixing compose-internal LiveKit URL (`ws://livekit:7880` instead of host-rebased `ws://livekit:12223`), transcriber `PORT` env, and stable dev WorkSecret key material; 2 passed (5.2m). |
+| Compose-backed transcriber e2e slice | Pass | `docker compose --env-file .env.dev -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm e2e-runner pnpm exec playwright test tests/e2e/transcriber.e2e.test.ts --project=e2e --reporter=line` passed together with the meeting slice (2 passed in 5.2m) on current date. Transcriber received `POST /sessions` with `serverUrl=ws://livekit:7880` and logged `connected directly to LiveKit room`. |
 | Compose-backed auth regression slice | Pass | `docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test tests/e2e/auth.test.ts --project=e2e --reporter=line"` passed on 2026-04-30 with 10 passing tests after stabilizing settings hydration waits. |
 | Fast Playwright regression after dev-pipeline update | Pass | `pnpm test:fast` passed on 2026-04-19 after adding the split fast/slow runners and compose-backed local dependency guidance. |
 | Parent chat persistence for typed meeting room chat | Pending | |
