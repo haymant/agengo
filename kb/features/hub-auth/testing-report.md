@@ -12,7 +12,7 @@ related_artifacts:
 	- kb/features/hub-auth/implementation-plan.md
 	- kb/features/hub-auth/testing-plan.md
 phase_gate: testing-in-progress
-last_updated: 2026-04-30
+last_updated: 2026-05-01
 ---
 
 Status
@@ -29,6 +29,7 @@ Evidence recorded so far
 - Regression coverage added in `hub/tests/e2e/auth.test.ts` for node-owner login messaging and for the expanded sidebar default after guest sign-in.
 - `docker compose --env-file .env.dev -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 >/dev/null && pnpm install --frozen-lockfile >/dev/null && pnpm exec playwright test tests/e2e/api.test.ts --project=e2e --grep 'sends message and receives AI response' --reporter=line"` passed on 2026-04-30 in 18.6s after changing the guest auth route to own the post-sign-in redirect.
 - `docker compose --env-file .env.dev -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 >/dev/null && pnpm install --frozen-lockfile >/dev/null && pnpm exec playwright test tests/e2e/auth.test.ts --project=e2e --reporter=line"` passed on 2026-04-30 with 11 passing tests in 1.5m.
+- `docker compose --env-file .env.dev -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm e2e-runner sh -lc "npm i -g pnpm@10 >/dev/null 2>&1 && pnpm install --frozen-lockfile >/dev/null 2>&1 && pnpm exec playwright test --project=e2e --reporter=line tests/e2e/auth.test.ts tests/e2e/meeting.test.ts"` passed on 2026-05-01 with 12 passing tests in 4.5m after stabilizing the identity settings persistence assertion.
 
 Open risks
 - `userHandle` and public discovery ids are still a planned follow-up slice.

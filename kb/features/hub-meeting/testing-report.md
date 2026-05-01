@@ -10,7 +10,7 @@ related_artifacts:
   - kb/features/hub-meeting/requirements.md
   - kb/features/hub-meeting/testing-plan.md
 phase_gate: testing-in-progress
-last_updated: 2026-04-30
+last_updated: 2026-05-01
 change_log:
   - Created testing report scaffold for implementation evidence on 2026-04-13
   - Recorded focused KB, unit, and Playwright evidence for the initial implementation on 2026-04-13
@@ -45,7 +45,7 @@ On 2026-04-30, compose health was revalidated after reverting a failed repo-root
 | Telegram outbound helper tests | Pass | `pnpm exec tsx tests/unit/meeting-channel-announcements.test.ts` passed on 2026-04-13. |
 | Telegram creation path tests | Pending | Runtime command implementation is in place, but no automated or manual evidence has been recorded yet. |
 | Playwright artifact-panel create and join flow | Pass | `pnpm exec playwright test tests/e2e/meeting.test.ts --reporter=line` passed on 2026-04-13 using the mock provider path and embedded artifact rendering. |
-| Compose-backed meeting Playwright slice | Pass | `docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test tests/e2e/meeting.test.ts --project=e2e --reporter=line"` passed on 2026-04-30 in 3.5m after restoring compose stack health. Re-validated on current date after fixing compose-internal LiveKit URL (`ws://livekit:7880` instead of host-rebased `ws://livekit:12223`), transcriber `PORT` env, and stable dev WorkSecret key material; 2 passed (5.2m). |
+| Compose-backed meeting Playwright slice | Pass | `docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test tests/e2e/meeting.test.ts --project=e2e --reporter=line"` passed on 2026-04-30 in 3.5m after restoring compose stack health. Re-validated on current date after fixing compose-internal LiveKit URL (`ws://livekit:7880` instead of host-rebased `ws://livekit:12223`), transcriber `PORT` env, and stable dev WorkSecret key material; 2 passed (5.2m). Re-validated on 2026-05-01 in the auth+meeting compose target run (`tests/e2e/auth.test.ts tests/e2e/meeting.test.ts`) with 12 passed in 4.5m after extending the meeting create-response wait timeout to 120s. |
 | Compose-backed transcriber e2e slice | Pass | `docker compose --env-file .env.dev -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm e2e-runner pnpm exec playwright test tests/e2e/transcriber.e2e.test.ts --project=e2e --reporter=line` passed together with the meeting slice (2 passed in 5.2m) on current date. Transcriber received `POST /sessions` with `serverUrl=ws://livekit:7880` and logged `connected directly to LiveKit room`. |
 | Compose-backed auth regression slice | Pass | `docker compose -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm --no-deps e2e-runner sh -lc "npm i -g pnpm@10 && pnpm install --frozen-lockfile && pnpm exec playwright test tests/e2e/auth.test.ts --project=e2e --reporter=line"` passed on 2026-04-30 with 10 passing tests after stabilizing settings hydration waits. |
 | Fast Playwright regression after dev-pipeline update | Pass | `pnpm test:fast` passed on 2026-04-19 after adding the split fast/slow runners and compose-backed local dependency guidance. |
@@ -89,3 +89,4 @@ On 2026-04-30, compose health was revalidated after reverting a failed repo-root
 - 2026-04-17: Recorded a passing authenticated LiveKit smoke run after the direct room-join transcriber fix, including transcript persistence back into the parent chat.
 - 2026-04-19: Recorded the checked-in compose dependency stack for local LiveKit plus transcriber bootstrapping and a passing `pnpm test:fast` regression run after the dev-pipeline update.
 - 2026-04-30: Recorded restored compose stack health plus passing compose-backed meeting and auth validation on the current baseline while leaving broader compose failures explicitly out of scope for this feature gate.
+- 2026-05-01: Re-validated compose-backed auth+meeting Playwright slice (`12 passed`, `4.5m`) after hardening identity-settings assertion flow in auth tests and extending meeting create-response wait timeout.

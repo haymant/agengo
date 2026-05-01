@@ -10,7 +10,7 @@ related_artifacts:
   - kb/features/hub-runtime-bootstrap/requirements.md
   - kb/features/hub-runtime-bootstrap/testing-plan.md
 phase_gate: testing-in-progress
-last_updated: 2026-04-02
+last_updated: 2026-05-01
 ---
 
 # Result Summary
@@ -25,7 +25,7 @@ The KB baseline for `hub/` was bootstrapped from checked-in code, README content
 | Hub runtime surface inventory | Observed | CLI, routing, worker, and test entrypoints were reviewed directly from `hub/`. |
 | Existing test asset inventory | Observed | Unit tests and manual Pi and Copilot skill plans were identified as current evidence sources. |
 | KB feature folder validation | Passed | `python3 /home/data/git/haymant/traco/scripts/validate_kb.py /home/data/git/haymant/traco/kb/features/hub-runtime-bootstrap` passed during the bootstrap task. |
-| Runtime execution evidence | Pending | Automated and manual workflow execution was not performed during this bootstrap task. |
+| Runtime execution evidence | Partial pass | `docker compose --env-file .env.dev -f docker-compose.dev.yml --profile full-stack --profile e2e run --rm e2e-runner sh -lc "npm i -g pnpm@10 >/dev/null 2>&1 && pnpm install --frozen-lockfile >/dev/null 2>&1 && pnpm exec playwright test --project=e2e --reporter=line tests/e2e/local-runtime.test.ts --grep 'starts the no-arg tracohub run mode'"` passed on 2026-05-01 in 5.2m after increasing managed runtime startup deadlines to 300s in both tracohub and the e2e probe helper. |
 
 # Defects
 
@@ -47,3 +47,4 @@ The KB baseline for `hub/` was bootstrapped from checked-in code, README content
 # Change Log
 
 - 2026-04-02: Bootstrapped testing report from code scan, draft-doc review, and current evidence inventory.
+- 2026-05-01: Added compose-backed local-runtime startup evidence for the no-arg tracohub mode after timeout and startup-deadline hardening.
